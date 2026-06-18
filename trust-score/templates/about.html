@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About — Trust-Score</title>
+    <meta name="description"
+        content="Learn about our AI-powered fake review detection system for Amazon, Flipkart, and Myntra">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga_id }}"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', '{{ ga_id }}');
+    </script>
+</head>
+
+<body>
+    {% include '_privacy_policy.html' %}
+    {% include '_terms_conditions.html' %}
+    <div class="bg-mesh"></div>
+
+    <header class="site-header fade-in">
+        <div class="header-brand">
+            <h1>
+                <img src="{{ url_for('static', filename='logo 1.png') }}" alt="Project logo" class="project-logo">
+                Trust-Score
+            </h1>
+            <p>About this project</p>
+        </div>
+        <nav class="platform-nav">
+            <a href="/" class="nav-home"><i class="fa-solid fa-house"></i> Home</a>
+            <a href="/about" class="nav-about nav-active"><i class="fa-solid fa-circle-info"></i> About</a>
+        </nav>
+        <div class="header-actions">
+            <button id="themeToggle" class="icon-btn tooltip-container" type="button" aria-label="Toggle theme">
+                <i class="fa-solid fa-moon"></i>
+                <span class="tooltip">Toggle Theme</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="page-shell">
+
+        <!-- About Hero -->
+        <section class="hero-card slide-up about-hero">
+            <div class="hero-content">
+                <div class="about-logo-showcase">
+                    <img src="{{ url_for('static', filename='logo 1.png') }}" alt="Trust-Score"
+                        class="about-logo-large">
+                </div>
+                <h2>About This Project</h2>
+                <p>An AI-powered system that detects fake and deceptive product reviews across major Indian e-commerce
+                    platforms using advanced machine learning techniques.</p>
+            </div>
+        </section>
+
+        <!-- Mission Section -->
+        <section class="panel slide-up delay-1">
+            <div class="panel-head">
+                <h3><i class="fa-solid fa-bullseye brand-icon"></i> Our Mission</h3>
+            </div>
+            <div class="about-text-block">
+                <p>Online reviews heavily influence purchasing decisions, but a significant percentage of reviews on
+                    e-commerce platforms are fake, misleading, or paid. Our mission is to <strong>empower
+                        consumers</strong> with AI-driven tools to identify deceptive reviews and make informed
+                    purchasing decisions.</p>
+                <p>This project uses <strong>Natural Language Processing (NLP)</strong> combined with behavioral
+                    analysis to classify reviews as genuine or fake with high accuracy.</p>
+            </div>
+        </section>
+
+        <!-- How It Works -->
+        <section class="panel slide-up delay-2">
+            <div class="panel-head">
+                <h3><i class="fa-solid fa-gears brand-icon"></i> How It Works</h3>
+            </div>
+            <div class="how-it-works-grid">
+                <div class="how-step">
+                    <div class="how-step-number">1</div>
+                    <div class="how-step-icon"><i class="fa-solid fa-link"></i></div>
+                    <h4>Paste Product URL</h4>
+                    <p>Copy any product URL from Amazon, Flipkart, or Myntra and paste it into our analyzer.</p>
+                </div>
+                <div class="how-step-connector"><i class="fa-solid fa-arrow-right"></i></div>
+                <div class="how-step">
+                    <div class="how-step-number">2</div>
+                    <div class="how-step-icon"><i class="fa-solid fa-robot"></i></div>
+                    <h4>AI Scrapes & Analyzes</h4>
+                    <p>Our system scrapes reviews and runs them through a trained ML model that examines text patterns,
+                        behavior signals, and linguistic features.</p>
+                </div>
+                <div class="how-step-connector"><i class="fa-solid fa-arrow-right"></i></div>
+                <div class="how-step">
+                    <div class="how-step-number">3</div>
+                    <div class="how-step-icon"><i class="fa-solid fa-chart-pie"></i></div>
+                    <h4>Get Detailed Results</h4>
+                    <p>View a comprehensive dashboard with trust scores, charts, keyword analysis, and individual review
+                        classifications.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tech Stack -->
+        <section class="panel slide-up delay-3">
+            <div class="panel-head">
+                <h3><i class="fa-solid fa-microchip brand-icon"></i> Technology Stack</h3>
+            </div>
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <i class="fa-brands fa-python"></i>
+                    <span>Python</span>
+                </div>
+                <div class="tech-card">
+                    <i class="fa-solid fa-flask-vial"></i>
+                    <span>Flask</span>
+                </div>
+                <div class="tech-card">
+                    <i class="fa-solid fa-brain"></i>
+                    <span>Scikit-learn</span>
+                </div>
+                <div class="tech-card">
+                    <i class="fa-solid fa-language"></i>
+                    <span>NLP / TF-IDF</span>
+                </div>
+                <div class="tech-card">
+                    <i class="fa-brands fa-chrome"></i>
+                    <span>Selenium</span>
+                </div>
+                <div class="tech-card">
+                    <i class="fa-brands fa-js"></i>
+                    <span>Chart.js</span>
+                </div>
+                <div class="tech-card">
+                    <i class="fa-brands fa-html5"></i>
+                    <span>HTML5 / CSS3</span>
+                </div>
+                <div class="tech-card">
+                    <i class="fa-solid fa-table"></i>
+                    <span>Pandas</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- ML Features -->
+        <section class="panel slide-up delay-3">
+            <div class="panel-head">
+                <h3><i class="fa-solid fa-list-check brand-icon"></i> ML Features Used</h3>
+            </div>
+            <div class="features-list">
+                <div class="feature-item"><i class="fa-solid fa-font text-blue"></i> <span>Word-level TF-IDF
+                        Vectorization</span></div>
+                <div class="feature-item"><i class="fa-solid fa-text-height text-purple"></i> <span>Character-level
+                        TF-IDF Vectorization</span></div>
+                <div class="feature-item"><i class="fa-solid fa-ruler-horizontal text-orange"></i> <span>Review Length &
+                        Word Count</span></div>
+                <div class="feature-item"><i class="fa-solid fa-exclamation text-red"></i> <span>Exclamation & Uppercase
+                        Ratio</span></div>
+                <div class="feature-item"><i class="fa-solid fa-fingerprint text-green"></i> <span>Unique Word
+                        Ratio</span></div>
+                <div class="feature-item"><i class="fa-solid fa-star text-blue"></i> <span>Rating & Verified Purchase
+                        Signals</span></div>
+                <div class="feature-item"><i class="fa-solid fa-clock text-purple"></i> <span>Review Burst
+                        Detection</span></div>
+                <div class="feature-item"><i class="fa-solid fa-thumbs-up text-orange"></i> <span>Helpful Vote
+                        Count</span></div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="site-footer fade-in delay-4">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4><i class="fa-solid fa-shield-halved"></i> Trust-Score</h4>
+                <p>AI-powered review authenticity analysis for Indian e-commerce platforms.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <a href="/">Home</a>
+                <a href="/about">About</a>
+                <a href="/privacy">Privacy Policy</a>
+                <a href="/terms">Terms & Conditions</a>
+            </div>
+            <div class="footer-section">
+                <h4>Built With</h4>
+                <div class="footer-tech-badges">
+                    <span class="tech-badge">Flask</span>
+                    <span class="tech-badge">Scikit-learn</span>
+                    <span class="tech-badge">Chart.js</span>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Trust-Score Project <span class="heart">♥</span> AI Powered</p>
+        </div>
+    </footer>
+
+    <script>
+        // Theme Toggle
+        const toggleBtn = document.getElementById("themeToggle");
+        const themeIcon = toggleBtn?.querySelector("i");
+
+        function setTheme(isDark) {
+            if (isDark) {
+                document.body.classList.add("dark-mode");
+                if (themeIcon) { themeIcon.classList.remove("fa-moon"); themeIcon.classList.add("fa-sun"); }
+            } else {
+                document.body.classList.remove("dark-mode");
+                if (themeIcon) { themeIcon.classList.remove("fa-sun"); themeIcon.classList.add("fa-moon"); }
+            }
+        }
+
+        if (localStorage.getItem("theme") === "dark" || (!localStorage.getItem("theme") && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+            setTheme(true);
+        }
+
+        toggleBtn?.addEventListener("click", function () {
+            const isDark = !document.body.classList.contains("dark-mode");
+            setTheme(isDark);
+            localStorage.setItem("theme", isDark ? "dark" : "light");
+        });
+
+        // Scroll-triggered animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.slide-up, .fade-in').forEach(el => observer.observe(el));
+    </script>
+</body>
+
+</html>

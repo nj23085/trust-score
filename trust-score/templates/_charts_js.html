@@ -1,0 +1,348 @@
+<script>
+    // =========================================
+    // THEME TOGGLE
+    // =========================================
+    const toggleBtn = document.getElementById("themeToggle");
+    const themeIcon = toggleBtn?.querySelector("i");
+
+    function setTheme(isDark) {
+        if (isDark) {
+            document.body.classList.add("dark-mode");
+            if (themeIcon) { themeIcon.classList.remove("fa-moon"); themeIcon.classList.add("fa-sun"); }
+        } else {
+            document.body.classList.remove("dark-mode");
+            if (themeIcon) { themeIcon.classList.remove("fa-sun"); themeIcon.classList.add("fa-moon"); }
+        }
+    }
+
+    if (localStorage.getItem("theme") === "dark" ||
+        (!localStorage.getItem("theme") && window.matchMedia("(prefers-color-scheme: dark)").matches)) {
+        setTheme(true);
+    }
+
+    toggleBtn?.addEventListener("click", function () {
+        const isDark = !document.body.classList.contains("dark-mode");
+        setTheme(isDark);
+        localStorage.setItem("theme", isDark ? "dark" : "light");
+
+        if (window.myCharts) {
+            const textColor = getComputedStyle(document.body)
+                .getPropertyValue("--text-2").trim() || "#64748b";
+            const gridColor = getComputedStyle(document.body)
+                .getPropertyValue("--border-strong").trim() || "rgba(203,213,225,0.4)";
+            window.myCharts.forEach(chart => {
+                chart.update({
+                    xAxis: { labels: { style: { color: textColor } }, gridLineColor: gridColor },
+                    yAxis: { labels: { style: { color: textColor } }, gridLineColor: gridColor },
+                    plotOptions: {
+                        pie: { dataLabels: { style: { color: textColor } }, borderColor: textColor },
+                        column: { dataLabels: { style: { color: textColor } } }
+                    }
+                });
+            });
+        }
+    });
+
+    // =========================================
+    // LEGACY LOADING OVERLAY (no job_id path)
+    // Only fires if there is NO job_id on the page
+    // =========================================
+    const analyzeForm = document.getElementById("analyzeForm");
+    if (analyzeForm && !document.getElementById("loadingOverlay")?.style.display.includes("flex")) {
+        analyzeForm.addEventListener("submit", function () {
+            const overlay = document.getElementById("loadingOverlay");
+            const bar = document.getElementById("progressBar");
+            if (!overlay) return;
+            let width = 0;
+            overlay.style.display = "flex";
+            overlay.classList.add("fade-in");
+            const interval = setInterval(function () {
+                if (width >= 95) {
+                    clearInterval(interval);
+                } else {
+                    width += Math.random() * 5 + 1;
+                    if (width > 95) width = 95;
+                    bar.style.width = width + "%";
+                }
+            }, 300);
+        });
+    }
+
+    // =========================================
+    // DASHBOARD TAB SWITCHING
+    // =========================================
+    function switchTab(tabId) {
+        document.querySelectorAll('.dashboard-tab').forEach(t => {
+            t.classList.remove('active');
+            t.setAttribute('aria-selected', 'false');
+        });
+        document.querySelectorAll('.dashboard-panel').forEach(p => {
+            p.classList.remove('active');
+        });
+
+        const tab = document.getElementById('tab-' + tabId);
+        const panel = document.getElementById('panel-' + tabId);
+        if (tab) { tab.classList.add('active'); tab.setAttribute('aria-selected', 'true'); }
+        if (panel) { panel.classList.add('active'); }
+
+        // Track tab navigation in Google Analytics
+        if (typeof gtag !== 'undefined') {
+            const tabNames = {
+                'overview': 'Overview',
+                'analysis': 'Analysis',
+                'prices': 'Price Comparison',
+                'similar': 'Similar Products'
+            };
+            const tabName = tabNames[tabId] || tabId;
+            gtag('event', 'view_analysis_tab', {
+                'tab_name': tabName,
+                'tab_id': tabId
+            });
+            console.log(`[Analytics] Viewed tab: ${tabName}`);
+        }
+
+        if (window.myCharts) {
+            setTimeout(() => {
+                window.myCharts.forEach(chart => { try { chart.reflow(); } catch (e) { } });
+            }, 100);
+        }
+    }
+
+    // =========================================
+    // COUNTER-UP ANIMATION
+    // =========================================
+    function animateCounter(el) {
+        const target = parseInt(el.textContent, 10);
+        if (isNaN(target)) return;
+        const duration = 1000;
+        const step = Math.ceil(target / (duration / 16));
+        let current = 0;
+        const timer = setInterval(() => {
+            current += step;
+            if (current >= target) { current = target; clearInterval(timer); }
+            el.textContent = current;
+        }, 16);
+    }
+
+    // =========================================
+    // CHART RENDERING
+    // =========================================
+    const chartDataEl = document.getElementById("chartData");
+    if (chartDataEl) {
+        const fake = parseInt(chartDataEl.dataset.fake);
+        const genuine = parseInt(chartDataEl.dataset.genuine);
+        const fakePercentage = parseFloat(chartDataEl.dataset.fakepercentage);
+        const genuinePerc = parseFloat(chartDataEl.dataset.genuinepercentage);
+        const keywordLabels = JSON.parse(chartDataEl.dataset.keywordlabels);
+        const keywordValues = JSON.parse(chartDataEl.dataset.keywordvalues);
+
+        window.myCharts = [];
+
+        const textColor = getComputedStyle(document.body).getPropertyValue("--text-2").trim() || "#64748b";
+        const gridColor = getComputedStyle(document.body).getPropertyValue("--border-strong").trim() || "rgba(203,213,225,0.4)";
+        const RED = "#ef4444";
+        const GREEN = "#10b981";
+
+        // ---- Gauge helpers ----
+        function makeGauge(canvasId, pct) {
+            const el = document.getElementById(canvasId);
+            if (!el) return;
+            const color = pct > 50 ? RED : pct > 20 ? "#f59e0b" : GREEN;
+            const chart = Highcharts.chart(canvasId, {
+                chart: {
+                    type: 'pie',
+                    backgroundColor: 'transparent',
+                    options3d: { enabled: true, alpha: 45 }
+                },
+                title: { text: null },
+                plotOptions: {
+                    pie: {
+                        innerSize: '70%',
+                        depth: 45,
+                        startAngle: -90,
+                        endAngle: 90,
+                        center: ['50%', '75%'],
+                        size: '110%',
+                        dataLabels: { enabled: false },
+                        colors: [color, getComputedStyle(document.body).getPropertyValue("--surface-3").trim() || "rgba(148,163,184,0.2)"],
+                        borderWidth: 0
+                    }
+                },
+                credits: { enabled: false },
+                tooltip: { enabled: false },
+                series: [{
+                    name: 'Risk',
+                    data: [
+                        { name: 'Fake', y: pct },
+                        { name: 'Genuine', y: 100 - pct }
+                    ]
+                }]
+            });
+            window.myCharts.push(chart);
+        }
+
+        makeGauge("gaugeChart", fakePercentage);
+
+        // ---- Doughnut ----
+        function makeDoughnut(canvasId) {
+            const el = document.getElementById(canvasId);
+            if (!el) return;
+            const chart = Highcharts.chart(canvasId, {
+                chart: {
+                    type: 'pie',
+                    backgroundColor: 'transparent',
+                    options3d: { enabled: true, alpha: 45 }
+                },
+                title: { text: null },
+                plotOptions: {
+                    pie: {
+                        innerSize: '40%',
+                        depth: 45,
+                        dataLabels: {
+                            enabled: true,
+                            format: '{point.name}: {point.y}%',
+                            style: { color: textColor, textOutline: 'none', fontSize: '14px' }
+                        },
+                        colors: [RED, GREEN],
+                        borderWidth: 1,
+                        borderColor: 'transparent'
+                    }
+                },
+                credits: { enabled: false },
+                tooltip: { pointFormat: '{series.name}: <b>{point.y}%</b>' },
+                series: [{
+                    name: 'Ratio',
+                    data: [
+                        { name: 'Fake', y: fakePercentage },
+                        { name: 'Genuine', y: genuinePerc }
+                    ]
+                }]
+            });
+            window.myCharts.push(chart);
+        }
+
+        makeDoughnut("doughnutChart");
+
+        // ---- Bar chart ----
+        const barEl = document.getElementById("barChart");
+        if (barEl) {
+            const chart = Highcharts.chart("barChart", {
+                chart: {
+                    type: 'column',
+                    backgroundColor: 'transparent',
+                    options3d: { enabled: true, alpha: 15, beta: 15, depth: 50, viewDistance: 25 }
+                },
+                title: { text: null },
+                xAxis: {
+                    categories: ['Fake', 'Genuine'],
+                    labels: { style: { color: textColor, fontSize: '14px' } },
+                    gridLineColor: gridColor
+                },
+                yAxis: {
+                    title: { text: null },
+                    labels: { style: { color: textColor } },
+                    gridLineColor: gridColor
+                },
+                plotOptions: {
+                    column: {
+                        depth: 25,
+                        colorByPoint: true,
+                        colors: [RED, GREEN],
+                        dataLabels: {
+                            enabled: true,
+                            style: { color: textColor, textOutline: 'none', fontSize: '14px' }
+                        }
+                    }
+                },
+                legend: { enabled: false },
+                credits: { enabled: false },
+                series: [{
+                    name: 'Reviews',
+                    data: [fake, genuine]
+                }]
+            });
+            window.myCharts.push(chart);
+        }
+
+        // ---- Parse Reviews Data ----
+        const reviewsDataEl = document.getElementById("reviewsData");
+        let reviews = [];
+        if (reviewsDataEl) {
+            try {
+                reviews = JSON.parse(reviewsDataEl.textContent);
+            } catch(e) {}
+        }
+
+        // ---- Review Length Horizontal Bar Chart (Changed to Vertical 3D Column) ----
+        const lengthEl = document.getElementById("lengthChart");
+        if (lengthEl && reviews.length > 0) {
+            let fakeTotalWords = 0;
+            let genuineTotalWords = 0;
+            let fakeCountLen = 0;
+            let genuineCountLen = 0;
+            
+            reviews.forEach(r => {
+                const len = r.review ? r.review.trim().split(/\s+/).length : 0;
+                if (r.prediction === 'fake') {
+                    fakeTotalWords += len;
+                    fakeCountLen++;
+                } else {
+                    genuineTotalWords += len;
+                    genuineCountLen++;
+                }
+            });
+            
+            const avgFakeLen = fakeCountLen > 0 ? Math.round(fakeTotalWords / fakeCountLen) : 0;
+            const avgGenLen = genuineCountLen > 0 ? Math.round(genuineTotalWords / genuineCountLen) : 0;
+
+            const chart = Highcharts.chart("lengthChart", {
+                chart: {
+                    type: 'column',
+                    backgroundColor: 'transparent',
+                    options3d: { enabled: true, alpha: 15, beta: 15, depth: 50, viewDistance: 25 }
+                },
+                title: { text: null },
+                xAxis: {
+                    categories: ['Fake Reviews', 'Genuine Reviews'],
+                    labels: { style: { color: textColor, fontSize: '14px' } },
+                    gridLineColor: gridColor
+                },
+                yAxis: {
+                    title: { text: null },
+                    labels: { style: { color: textColor } },
+                    gridLineColor: gridColor
+                },
+                plotOptions: {
+                    column: {
+                        depth: 25,
+                        colorByPoint: true,
+                        colors: [RED, GREEN],
+                        dataLabels: {
+                            enabled: true,
+                            format: '{point.y} words',
+                            style: { color: textColor, textOutline: 'none', fontSize: '14px' }
+                        }
+                    }
+                },
+                legend: { enabled: false },
+                credits: { enabled: false },
+                series: [{
+                    name: 'Avg Word Count',
+                    data: [avgFakeLen, avgGenLen]
+                }]
+            });
+            window.myCharts.push(chart);
+        }
+
+        // ---- Counter-up on visible numbers ----
+        document.querySelectorAll('.counter-up').forEach(animateCounter);
+
+        // ---- Scroll-reveal ----
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) entry.target.classList.add('visible');
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.slide-up, .fade-in').forEach(el => observer.observe(el));
+    }
+</script>

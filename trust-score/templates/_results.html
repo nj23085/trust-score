@@ -1,0 +1,978 @@
+
+
+<!-- ============================================================ -->
+<!-- LIVE PROGRESS OVERLAY  (shown when job_id is present)        -->
+<!-- ============================================================ -->
+{% if job_id %}
+<div id="loadingOverlay" class="loading-overlay" style="display:flex; justify-content: center; align-items: center;">
+    <div class="loading-card glass-panel"
+        style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div class="modern-spinner">
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring spinner-ring-inner"></div>
+        </div>
+        <h4 id="progressTitle">Processing Request</h4>
+        <p id="progressMsg">Initialising scraper…</p>
+
+        <!-- Real progress bar -->
+        <div class="progress-container">
+            <div id="progressBar" class="progress-bar" style="width:0%">
+                <div class="progress-bar-glow"></div>
+            </div>
+        </div>
+
+        <!-- Numeric counters -->
+        <div class="progress-stats">
+            <span id="progressPct">0%</span>
+            <span id="reviewCount" class="review-count-badge" style="display:none;">
+                <i class="fa-solid fa-comment-dots"></i>
+                <span id="reviewCountNum">0</span> reviews scraped
+            </span>
+        </div>
+
+        <!-- Stage indicators -->
+        <div class="progress-stages">
+            <div class="stage-dot active" id="stage-scrape" title="Scraping reviews">
+                <i class="fa-solid fa-spider"></i>
+                <span>Scraping</span>
+            </div>
+            <div class="stage-line"></div>
+            <div class="stage-dot" id="stage-ai" title="AI Analysis">
+                <i class="fa-solid fa-brain"></i>
+                <span>AI Analysis</span>
+            </div>
+            <div class="stage-line"></div>
+            <div class="stage-dot" id="stage-done" title="Done">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>Done</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const JOB_ID = "{{ job_id }}";
+        const POLL_MS = 1200;
+        let pollTimer = null;
+
+        const overlay = document.getElementById("loadingOverlay");
+        const bar = document.getElementById("progressBar");
+        const pctLabel = document.getElementById("progressPct");
+        const msgEl = document.getElementById("progressMsg");
+        const titleEl = document.getElementById("progressTitle");
+        const countBadge = document.getElementById("reviewCount");
+        const countNum = document.getElementById("reviewCountNum");
+        const stageScrape = document.getElementById("stage-scrape");
+        const stageAI = document.getElementById("stage-ai");
+        const stageDone = document.getElementById("stage-done");
+
+        function setStage(progress) {
+            [stageScrape, stageAI, stageDone].forEach(s => s.classList.remove("active", "complete"));
+            if (progress < 72) {
+                stageScrape.classList.add("active");
+            } else if (progress < 95) {
+                stageScrape.classList.add("complete");
+                stageAI.classList.add("active");
+            } else {
+                stageScrape.classList.add("complete");
+                stageAI.classList.add("complete");
+                stageDone.classList.add("active");
+            }
+        }
+
+        function poll() {
+            fetch(`/progress/${JOB_ID}`)
+                .then(r => r.json())
+                .then(data => {
+                    const pct = Math.min(data.progress || 0, 100);
+                    bar.style.width = pct + "%";
+                    pctLabel.textContent = pct + "%";
+                    msgEl.textContent = data.message || "";
+                    setStage(pct);
+
+                    if (data.collected && data.collected > 0) {
+                        countBadge.style.display = "inline-flex";
+                        countNum.textContent = data.collected;
+                    }
+
+                    if (data.status === "done") {
+                        clearInterval(pollTimer);
+                        titleEl.textContent = "Analysis Complete!";
+                        msgEl.textContent = "Redirecting to results…";
+                        stageDone.classList.add("active");
+                        setTimeout(() => {
+                            window.location.href = `/result/${JOB_ID}`;
+                        }, 600);
+
+                    } else if (data.status === "error") {
+                        clearInterval(pollTimer);
+                        overlay.innerHTML = `
+                        <div class="loading-card glass-panel" style="border-left:4px solid var(--danger);">
+                            <i class="fa-solid fa-circle-exclamation" style="font-size:2.5rem;color:var(--danger);margin-bottom:16px;"></i>
+                            <h4 style="color:var(--danger);">Scraping Failed</h4>
+                            <p style="margin:12px 0 24px;">${data.message}</p>
+                            <button onclick="window.history.back()" class="primary-btn">
+                                <i class="fa-solid fa-arrow-left"></i> Go Back
+                            </button>
+                        </div>`;
+                    }
+                })
+                .catch(() => { /* network hiccup — just wait for next tick */ });
+        }
+
+        // Start polling immediately, then every POLL_MS
+        poll();
+        pollTimer = setInterval(poll, POLL_MS);
+    })();
+</script>
+{% endif %}
+
+<!-- ============================================================ -->
+<!-- STATIC LOADING OVERLAY  (no job_id — legacy fallback)        -->
+<!-- ============================================================ -->
+{% if not job_id and not show_results %}
+<div id="loadingOverlay" class="loading-overlay" style="display:none; justify-content: center; align-items: center;">
+    <div class="loading-card glass-panel"
+        style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <div class="modern-spinner">
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring spinner-ring-inner"></div>
+        </div>
+        <h4>Processing Request</h4>
+        <p>Scraping and evaluating reviews. This may take some time.</p>
+        <div class="progress-container">
+            <div id="progressBar" class="progress-bar">
+                <div class="progress-bar-glow"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if show_results %}
+<script id="reviewsData" type="application/json">{{ reviews | tojson }}</script>
+<div id="chartData" data-fake="{{ fake }}" data-genuine="{{ genuine }}" data-fakepercentage="{{ fake_percentage }}"
+    data-genuinepercentage="{{ genuine_percentage }}" data-keywordlabels='{{ keyword_labels | tojson }}'
+    data-keywordvalues='{{ keyword_values | tojson }}' data-product="{{ product }}" data-total="{{ total }}"
+    data-trust_score="{{ summary.trust_score }}"></div>
+
+<!-- Track Analysis Completion in Google Analytics -->
+<script>
+    (function () {
+        try {
+            const chartData = document.getElementById('chartData');
+            if (chartData && typeof gtag !== 'undefined') {
+                const product = chartData.getAttribute('data-product') || 'Unknown';
+                const trustScore = parseFloat(chartData.getAttribute('data-trust_score')) || 0;
+                const totalReviews = parseInt(chartData.getAttribute('data-total')) || 0;
+                const fakeCount = parseInt(chartData.getAttribute('data-fake')) || 0;
+                const platform = product.toLowerCase().includes('amazon') ? 'amazon' :
+                    product.toLowerCase().includes('flipkart') ? 'flipkart' :
+                        product.toLowerCase().includes('myntra') ? 'myntra' : 'unknown';
+
+                gtag('event', 'analysis_complete', {
+                    'product': product,
+                    'platform': platform,
+                    'trust_score': trustScore,
+                    'total_reviews': totalReviews,
+                    'fake_reviews': fakeCount,
+                    'genuine_reviews': totalReviews - fakeCount,
+                    'fake_percentage': Math.round((fakeCount / totalReviews) * 100)
+                });
+                console.log(`[Analytics] Analysis completed - Trust Score: ${trustScore}, Fake: ${fakeCount}/${totalReviews}`);
+            }
+        } catch (e) {
+            console.error('Analytics tracking error:', e);
+        }
+    })();
+</script>
+
+<!-- ============================================================ -->
+<!-- DASHBOARD RESULTS VIEW                                        -->
+<!-- ============================================================ -->
+<section class="panel slide-up delay-2 dashboard-container">
+
+    <!-- Logo Watermark -->
+    <img src="{{ url_for('static', filename='project-logo.svg') }}" alt="" class="logo-watermark" aria-hidden="true">
+
+    <div style="margin-bottom: 16px; display: flex; gap: 12px;">
+        <a href="/" class="primary-btn" style="text-decoration: none; display: inline-flex; width: auto;">
+            <i class="fa-solid fa-arrow-left"></i> Back to Home
+        </a>
+        <a href="/admin" target="_blank" class="primary-btn"
+            style="text-decoration: none; display: inline-flex; width: auto; background: var(--surface-2); color: var(--text-1); border: 1px solid var(--border-light);">
+            <i class="fa-solid fa-table-list"></i> View All Reviews
+        </a>
+    </div>
+
+    <!-- Product Info Header (Visible on all tabs) -->
+    <div class="product-info-card">
+        {% if product_image %}
+        <img src="{{ product_image }}" alt="Product" class="product-info-img">
+        {% else %}
+        <div class="metric-icon blue product-info-img" style="font-size:2rem;">
+            <i class="fa-solid fa-box"></i>
+        </div>
+        {% endif %}
+        <div class="product-info-text">
+            <h2>{{ product }}</h2>
+            <p>{{ total }} reviews analysed by AI model</p>
+        </div>
+    </div>
+
+    <!-- Tab Navigation -->
+    <nav class="dashboard-tabs" role="tablist">
+        <button class="dashboard-tab active" onclick="switchTab('overview')" role="tab" aria-selected="true"
+            id="tab-overview">
+            <i class="fa-solid fa-gauge-high"></i> Overview
+        </button>
+        <button class="dashboard-tab" onclick="switchTab('analysis')" role="tab" aria-selected="false"
+            id="tab-analysis">
+            <i class="fa-solid fa-chart-simple"></i> Analysis
+        </button>
+        <button class="dashboard-tab" onclick="switchTab('prices')" role="tab" aria-selected="false" id="tab-prices">
+            <i class="fa-solid fa-tags"></i> Price Comparison
+        </button>
+        <button class="dashboard-tab" onclick="switchTab('similar')" role="tab" aria-selected="false" id="tab-similar">
+            <i class="fa-solid fa-layer-group"></i> Similar Products
+        </button>
+
+    </nav>
+
+    <!-- ======== TAB 1: OVERVIEW ======== -->
+    <div class="dashboard-panel active" id="panel-overview" role="tabpanel">
+
+        {% if no_reviews %}
+        <!-- No reviews empty state -->
+        <div class="no-reviews-state">
+            <div class="no-reviews-icon"><i class="fa-solid fa-comment-slash"></i></div>
+            <h3>No Reviews Found</h3>
+            <p>This product has no reviews yet. We couldn't find any customer feedback to analyse.<br>Check the
+                <strong>Price Comparison</strong> and <strong>Similar Products</strong> tabs below — those still work!
+            </p>
+            <div class="no-reviews-hint">
+                <i class="fa-solid fa-circle-info"></i>
+                Try a different product or come back once the product has received some reviews.
+            </div>
+        </div>
+        {% else %}
+
+        <!-- Verdict Banner -->
+        {% if fake_percentage <= 20 %} <div class="verdict-banner verdict-safe">
+            <i class="fa-solid fa-shield-check"></i>
+            <span>Reviews appear largely genuine — LOW risk of fake reviews ({{ fake_percentage }}% fake)</span>
+    </div>
+    {% elif fake_percentage <= 50 %} <div class="verdict-banner verdict-warning">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>Moderate risk detected — {{ fake_percentage }}% of reviews flagged as potentially fake</span>
+        </div>
+        {% else %}
+        <div class="verdict-banner verdict-danger">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>HIGH risk of fake reviews — {{ fake_percentage }}% of reviews flagged as fake</span>
+        </div>
+        {% endif %}
+
+        <!-- Trust Score Hero Card -->
+        <article class="trust-score-hero"
+            style="margin-bottom: 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; padding: 32px; color: white; box-shadow: 0 12px 40px rgba(102, 126, 234, 0.3); position: relative; overflow: hidden;">
+            <div
+                style="position: absolute; top: -30px; right: -30px; width: 200px; height: 200px; background: rgba(255,255,255,0.1); border-radius: 50%; pointer-events: none;">
+            </div>
+            <div
+                style="position: absolute; bottom: -50px; left: -50px; width: 150px; height: 150px; background: rgba(255,255,255,0.05); border-radius: 50%; pointer-events: none;">
+            </div>
+
+            <div style="display: flex; align-items: flex-start; gap: 24px; position: relative; z-index: 1;">
+                <div style="flex-shrink: 0;">
+                    <div
+                        style="width: 120px; height: 120px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 3rem; backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.3);">
+                        <i class="fa-solid fa-shield-check"></i>
+                    </div>
+                </div>
+                <div style="flex: 1;">
+                    <h3 style="margin: 0 0 8px 0; font-size: 1.8rem; font-weight: 700;">Product Trust Score</h3>
+                    <p style="margin: 0 0 16px 0; opacity: 0.95; font-size: 0.95rem; line-height: 1.6;">
+                        {% if summary.trust_score >= 8 %}
+                        <strong>Excellent!</strong> High proportion of genuine reviews. This product is highly
+                        trustworthy based on customer feedback.
+                        {% elif summary.trust_score >= 6 %}
+                        <strong>Good!</strong> Most reviews appear genuine with a reasonable balance of feedback.
+                        {% elif summary.trust_score >= 4 %}
+                        <strong>Moderate.</strong> Mix of genuine and potentially fake reviews. Review carefully.
+                        {% elif summary.trust_score >= 2 %}
+                        <strong>Low.</strong> Significant portion of reviews flagged as fake. Exercise caution.
+                        {% else %}
+                        <strong>Very Low.</strong> Most reviews appear to be fake. Use alternative products.
+                        {% endif %}
+                    </p>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <div style="display: inline-block;">
+                            <span style="font-size: 2.5rem; font-weight: 800; letter-spacing: -1px;">{{
+                                summary.trust_score }}<span style="font-size: 1.5rem; opacity: 0.9;">/10</span></span>
+                        </div>
+                        <div style="flex: 1; max-width: 200px;">
+                            <div
+                                style="background: rgba(255,255,255,0.2); height: 8px; border-radius: 4px; overflow: hidden; backdrop-filter: blur(10px);">
+                                <div
+                                    style="height: 100%; width: {{ (summary.trust_score / 10) * 100 }}%; background: linear-gradient(90deg, #fff, rgba(255,255,255,0.8)); border-radius: 4px; transition: width 0.6s ease;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </article>
+
+        <!-- Metrics Grid -->
+        <div class="metrics-grid" style="margin-bottom:24px;">
+            <article class="metric-card hover-lift">
+                <div class="metric-icon blue"><i class="fa-solid fa-comments"></i></div>
+                <div>
+                    <h4>Total Reviews</h4>
+                    <strong class="counter-up">{{ total }}</strong>
+                </div>
+            </article>
+            <article class="metric-card hover-lift">
+                <div class="metric-icon red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                <div>
+                    <h4>Fake Reviews</h4>
+                    <strong>
+                        <span class="counter-up">{{ fake }}</span>
+                        <span class="percentage-badge red-badge">({{ fake_percentage }}%)</span>
+                    </strong>
+                </div>
+            </article>
+            <article class="metric-card hover-lift">
+                <div class="metric-icon green"><i class="fa-solid fa-circle-check"></i></div>
+                <div>
+                    <h4>Genuine Reviews</h4>
+                    <strong>
+                        <span class="counter-up">{{ genuine }}</span>
+                        <span class="percentage-badge green-badge">({{ genuine_percentage }}%)</span>
+                    </strong>
+                </div>
+            </article>
+        </div>
+
+        <!-- Gauge + Doughnut -->
+        <div class="overview-grid">
+            <article class="chart-card hover-lift relative-card">
+                <h4><i class="fa-solid fa-gauge-high text-red"></i> Overall Fake Risk</h4>
+                <div class="chart-wrapper gauge-wrapper" style="height:250px;max-height:250px;">
+                    <div id="gaugeChart"></div>
+                    <div class="gauge-center-label">
+                        <span class="gauge-value">{{ fake_percentage }}%</span>
+                        <span class="gauge-text">Risk Level</span>
+                    </div>
+                </div>
+            </article>
+            <article class="chart-card hover-lift">
+                <h4><i class="fa-solid fa-chart-pie text-purple"></i> Distribution Ratio</h4>
+                <div class="chart-wrapper" style="height:250px;max-height:250px;">
+                    <div id="doughnutChart" style="height:100%; width:100%"></div>
+                </div>
+            </article>
+        </div>
+        {% endif %}{# end no_reviews else #}
+    </div> <!-- Close panel-overview -->
+
+    <div class="dashboard-panel" id="panel-analysis" role="tabpanel">
+            {% if no_reviews %}
+            <div class="no-reviews-state" style="margin-top:20px;">
+                <div class="no-reviews-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
+                <h3>No Analysis Available</h3>
+                <p>There are no reviews to analyse for this product. The AI analysis will appear here once the product
+                    receives customer reviews.</p>
+            </div>
+            {% else %}
+            <article class="summary-panel panel hover-lift" style="margin-top:20px;">
+                <div class="summary-header">
+                    <h4><i class="fa-solid fa-robot text-purple"></i> AI Product Summary</h4>
+                    <span class="summary-badge">Based on {{ genuine }} genuine reviews</span>
+                </div>
+                <div class="summary-grid">
+                    <!-- Usefulness -->
+                    <div class="summary-card">
+                        <div class="summary-card-header">
+                            <div class="summary-icon usefulness-icon">
+                                <i class="fa-solid fa-thumbs-up"></i>
+                            </div>
+                            <div>
+                                <h5>Product Usefulness</h5>
+                                <span
+                                    class="summary-verdict {% if summary.usefulness_score >= 60 %}verdict-good{% elif summary.usefulness_score >= 40 %}verdict-neutral{% else %}verdict-bad{% endif %}">{{
+                                    summary.usefulness }}</span>
+                            </div>
+                        </div>
+                        <div class="summary-bar-track">
+                            <div class="summary-bar summary-bar-blue" style="width: {{ summary.usefulness_score }}%;">
+                            </div>
+                        </div>
+                        <p class="summary-detail">{{ summary.usefulness_detail }}</p>
+                    </div>
+                    <!-- Risk Factor -->
+                    <div class="summary-card">
+                        <div class="summary-card-header">
+                            <div class="summary-icon risk-icon">
+                                <i class="fa-solid fa-shield-halved"></i>
+                            </div>
+                            <div>
+                                <h5>Fake Review Risk</h5>
+                                <span
+                                    class="summary-verdict {% if summary.risk_score <= 20 %}verdict-good{% elif summary.risk_score <= 50 %}verdict-neutral{% else %}verdict-bad{% endif %}">{{
+                                    summary.risk_level }}</span>
+                            </div>
+                        </div>
+                        <div class="summary-bar-track">
+                            <div class="summary-bar summary-bar-risk" style="width: {{ summary.risk_score }}%;"></div>
+                        </div>
+                        <p class="summary-detail">{{ summary.risk_detail }}</p>
+                    </div>
+                    <!-- Value for Money -->
+                    <div class="summary-card">
+                        <div class="summary-card-header">
+                            <div class="summary-icon value-icon">
+                                <i class="fa-solid fa-indian-rupee-sign"></i>
+                            </div>
+                            <div>
+                                <h5>Value for Money</h5>
+                                <span
+                                    class="summary-verdict {% if summary.value_score >= 60 %}verdict-good{% elif summary.value_score >= 40 %}verdict-neutral{% else %}verdict-bad{% endif %}">{{
+                                    summary.value_verdict }}</span>
+                            </div>
+                        </div>
+                        <div class="summary-bar-track">
+                            <div class="summary-bar summary-bar-green" style="width: {{ summary.value_score }}%;"></div>
+                        </div>
+                        <p class="summary-detail">{{ summary.value_detail }}</p>
+                    </div>
+
+                </div>
+
+            </article>
+            <div class="chart-grid">
+                <article class="chart-card hover-lift">
+                    <h4><i class="fa-solid fa-chart-simple text-blue"></i> Volume Comparison</h4>
+                    <div class="chart-wrapper">
+                        <div id="barChart" style="height:100%; width:100%"></div>
+                    </div>
+                </article>
+                <article class="chart-card hover-lift">
+                    <h4><i class="fa-solid fa-ruler-horizontal text-green"></i> Avg. Review Length</h4>
+                    <div class="chart-wrapper">
+                        <div id="lengthChart" style="height:100%; width:100%"></div>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+        {% endif %}{# end no_reviews else in analysis #}
+    </div> <!-- Close panel-analysis -->
+
+    <!-- ======== TAB 3: PRICE COMPARISON ======== -->
+    <div class="dashboard-panel" id="panel-prices" role="tabpanel">
+            <div id="priceMainContainer">
+
+                <!-- RESULTS VIEW (hidden until data arrives) -->
+                <div id="priceAISummary" class="price-ai-summary hidden">
+
+                    <!-- Hero Banner -->
+                    <div class="price-hero-banner">
+                        <div class="price-hero-left">
+                            <span class="price-hero-eyebrow">
+                                <i class="fa-solid fa-bolt"></i> Live Price Intelligence
+                            </span>
+                            <h3 class="price-hero-title">Find the Best Deal</h3>
+                            <p class="price-hero-sub" id="priceHeroSub">Comparing prices across top Indian stores</p>
+                        </div>
+                        <div class="price-hero-right">
+                            <span class="price-stores-pill" id="priceStoresChecked">
+                                <i class="fa-solid fa-store"></i> 3 stores checked
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Recommendation Card -->
+                    <div class="price-recommendation-card" id="priceRecommendation">
+                        <!-- JS fills this -->
+                    </div>
+
+                    <!-- Store Cards Row -->
+                    <div class="price-stores-section">
+                        <h5 class="price-stores-label">
+                            <i class="fa-solid fa-scale-balanced"></i> Full Price Breakdown
+                        </h5>
+                        <div class="price-summary-grid" id="priceSummaryGrid">
+                            <!-- JS fills store comparison cards -->
+                        </div>
+                    </div>
+
+
+
+                </div>
+
+                <!-- LOADING STATE -->
+                <div id="priceLoadingState" class="price-loading-state">
+                    <div class="price-loading-orb">
+                        <div class="price-loading-spinner"></div>
+                        <i class="fa-solid fa-tags price-loading-icon"></i>
+                    </div>
+                    <h4 id="priceLoadingTitle">Hunting for the best prices&hellip;</h4>
+                    <p id="priceLoadingMsg">Checking Amazon, Flipkart &amp; Myntra simultaneously</p>
+                    <div class="price-platform-pills">
+                        <span class="ppill ppill-amazon">&#128230; Amazon</span>
+                        <span class="ppill ppill-flipkart">&#128722; Flipkart</span>
+                        <span class="ppill ppill-myntra">&#128343; Myntra</span>
+                    </div>
+                    <div class="price-progress-dots">
+                        <span class="price-dot price-dot-active"></span>
+                        <span class="price-dot"></span>
+                        <span class="price-dot"></span>
+                    </div>
+                </div>
+
+                <!-- NO EXTENSION WARNING -->
+                <div id="priceNoExtension" class="price-no-extension hidden">
+                    <div class="price-no-ext-icon">
+                        <i class="fa-solid fa-puzzle-piece"></i>
+                    </div>
+                    <h4>Extension Required</h4>
+                    <p>Price comparison needs the Trust-Score Chrome extension to scrape live prices.</p>
+                    <a href="https://chrome.google.com/webstore" target="_blank" class="price-install-btn">
+                        <i class="fa-brands fa-chrome"></i> Install Extension
+                    </a>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ======== TAB 4: SIMILAR PRODUCTS ======== -->
+        <div class="dashboard-panel" id="panel-similar" role="tabpanel">
+
+            <!-- Loading state (shown until results arrive) -->
+            <div id="similarLoadingState" class="price-loading-state">
+                <div class="price-loading-spinner"></div>
+                <h4>Finding similar products&hellip;</h4>
+                <p>Scraping recommendations from the product page</p>
+                <div class="price-progress-dots">
+                    <span class="price-dot price-dot-active"></span>
+                    <span class="price-dot"></span>
+                    <span class="price-dot"></span>
+                </div>
+            </div>
+
+            <!-- Similar Products Section (hidden until results arrive) -->
+            <div id="similarProductsSection" class="similar-products-section hidden">
+                <div class="similar-products-header">
+                    <h4><i class="fa-solid fa-layer-group text-blue"></i> Similar Products</h4>
+                    <span class="similar-products-badge" id="similarProductsCount">0 products</span>
+                </div>
+                <p class="similar-products-subtitle">Explore related products from the same platform</p>
+                <div class="similar-products-grid" id="similarProductsGrid">
+                    <!-- JS fills this -->
+                </div>
+            </div>
+
+            <!-- No products fallback (hidden by default) -->
+            <div id="similarNoProducts" class="price-no-extension hidden">
+                <i class="fa-solid fa-box-open"
+                    style="font-size:2.5rem;color:var(--text-muted);margin-bottom:12px;"></i>
+                <h4>No Similar Products Found</h4>
+                <p>We couldn't find similar product recommendations on this page. Try a different product.</p>
+            </div>
+
+        </div>
+
+</section>
+
+<!-- ============================================================ -->
+<!-- PRICE COMPARISON JS (auto-triggers on result page load)      -->
+<!-- ============================================================ -->
+<script>
+    (function () {
+        const PRODUCT_LINK = {{ (product_link     if product_link     else '') | tojson
+    }};
+    const PRODUCT_TITLE = {{ (product           if product           else '') | tojson }};
+    // Pre-baked session ID from ?psid= query param — set by extension when it
+    // launches price scraping in parallel with review scraping.
+    const PREBAKED_PSID = {{ (price_session_id if price_session_id else '') | tojson }};
+
+    let priceSessionId = PREBAKED_PSID || null;
+    let pricePollTimer = null;
+    let extensionReady = false;
+    let priceCurrentSlide = 0;
+
+    // ── FAST PATH: session already exists — start polling immediately ──────
+    // The extension kicked off price comparison at the same time as review
+    // scraping, so prices may already be partially or fully fetched.
+    if (PREBAKED_PSID) {
+        console.log('[Trust-Score-Price] Pre-baked session detected:', PREBAKED_PSID, '— polling immediately');
+        // Small delay so page finishes rendering before we update the DOM
+        setTimeout(() => startPolling(PREBAKED_PSID), 300);
+    }
+
+    // ── SLOW PATH: wait for extension ready signal ─────────────────────────
+    // Triggered only when there is no pre-baked session ID
+    // (e.g. extension was reloaded mid-flow or old result pages).
+    window.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'TRUE_SPOT_EXTENSION_READY') {
+            extensionReady = true;
+            if (!priceSessionId) {
+                // No pre-baked ID — start a fresh price session via the extension
+                startPriceComparison();
+            }
+        }
+    });
+
+    // Fallback: if 6 s pass with no session and no extension, show warning
+    setTimeout(() => {
+        if (!priceSessionId && !extensionReady) {
+            const ls = document.getElementById('priceLoadingState');
+            const ne = document.getElementById('priceNoExtension');
+            if (ls) ls.classList.add('hidden');
+            if (ne) ne.classList.remove('hidden');
+        }
+    }, 6000);
+
+    // ── Start a fresh price session (slow path only) ───────────────────────
+    async function startPriceComparison() {
+        const url = PRODUCT_LINK;
+        if (!url || (!url.includes('amazon') && !url.includes('flipkart') && !url.includes('myntra'))) {
+            const lt = document.getElementById('priceLoadingTitle');
+            const lm = document.getElementById('priceLoadingMsg');
+            if (lt) lt.textContent = 'No product URL available';
+            if (lm) lm.textContent = 'Price comparison requires a direct Amazon, Flipkart or Myntra product link.';
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/price/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            });
+            const data = await res.json();
+            if (data.status !== 'success') return;
+
+            priceSessionId = data.session_id;
+
+            // Tell extension bridge to start the price search
+            window.postMessage({
+                type: 'TRUE_SPOT_START_PRICE_COMPARE',
+                url: url,
+                session_id: priceSessionId
+            }, '*');
+
+            startPolling(priceSessionId);
+
+        } catch (err) {
+            const lm = document.getElementById('priceLoadingMsg');
+            if (lm) lm.textContent = 'Could not connect to backend.';
+        }
+    }
+
+    // ── Shared polling function (used by both paths) ───────────────────────
+    function startPolling(sessionId) {
+        let attempts = 0;
+        pricePollTimer = setInterval(async () => {
+            attempts++;
+            try {
+                const r = await fetch(`/api/price/poll/${sessionId}`);
+                const d = await r.json();
+
+                if (d.status === 'done') {
+                    clearInterval(pricePollTimer);
+                    renderPriceResults(d.results, d.product_title || PRODUCT_TITLE, d.similar_products || []);
+                } else {
+                    // Animate loading dots
+                    const dots = document.querySelectorAll('.price-dot');
+                    dots.forEach((dot, i) => dot.classList.toggle('price-dot-active', i === (attempts % 3)));
+
+                    const lm = document.getElementById('priceLoadingMsg');
+                    if (attempts === 15 && lm) lm.textContent = 'Searching Google for product pages\u2026';
+                    if (attempts === 30 && lm) lm.textContent = 'Scraping prices from product pages\u2026';
+                    if (attempts === 60 && lm) lm.textContent = 'Almost done, finalising results\u2026';
+                    if (attempts > 120) {
+                        clearInterval(pricePollTimer);
+                        if (lm) lm.textContent = 'Timed out. Switch tabs and try again.';
+                    }
+                }
+            } catch (err) { /* keep polling */ }
+        }, 1000);
+    }
+
+    function renderPriceResults(results, productTitle, similarProducts) {
+        const loadingEl = document.getElementById('priceLoadingState');
+        if (loadingEl) loadingEl.classList.add('hidden');
+
+        if (!results || results.length === 0) {
+            if (loadingEl) {
+                document.getElementById('priceLoadingTitle').textContent = 'No prices found';
+                document.getElementById('priceLoadingMsg').textContent = 'Could not find prices on Google Shopping. Try again later.';
+                loadingEl.classList.remove('hidden');
+            }
+            // Still render similar products even if no price results
+            if (similarProducts && similarProducts.length > 0) {
+                renderSimilarProducts(similarProducts);
+            }
+            return;
+        }
+
+        const found = results.filter(r => r.found && r.price > 0);
+        const lowest = found.length ? Math.min(...found.map(r => r.price)) : 0;
+        const highest = found.length ? Math.max(...found.map(r => r.price)) : 0;
+        const savings = highest - lowest;
+
+        // ── Build AI Price Summary (the only results view) ─────────────────
+        renderAIPriceSummary(results, productTitle, found, lowest, highest, savings);
+
+        // ── Render Similar Products ───────────────────────────────────────
+        if (similarProducts && similarProducts.length > 0) {
+            renderSimilarProducts(similarProducts);
+        }
+    }
+
+    function renderAIPriceSummary(results, productTitle, found, lowest, highest, savings) {
+        const summaryEl = document.getElementById('priceAISummary');
+        if (!summaryEl) return;
+
+        const storesCheckedEl = document.getElementById('priceStoresChecked');
+        if (storesCheckedEl) storesCheckedEl.textContent = results.length + ' stores checked';
+
+        // Find best store
+        const bestResult = found.length > 0
+            ? found.reduce((a, b) => a.price <= b.price ? a : b)
+            : null;
+
+        // Build recommendation
+        const recoEl = document.getElementById('priceRecommendation');
+        if (recoEl && bestResult) {
+            const savingsPercent = highest > 0 ? Math.round(((highest - lowest) / highest) * 100) : 0;
+            const availCount = found.length;
+            const unavailCount = results.length - availCount;
+
+            let confidenceLevel, confidenceClass, confidenceIcon;
+            if (availCount >= 3) {
+                confidenceLevel = 'High Confidence';
+                confidenceClass = 'reco-confidence-high';
+                confidenceIcon = 'fa-solid fa-circle-check';
+            } else if (availCount >= 2) {
+                confidenceLevel = 'Good Confidence';
+                confidenceClass = 'reco-confidence-good';
+                confidenceIcon = 'fa-solid fa-check';
+            } else {
+                confidenceLevel = 'Limited Data';
+                confidenceClass = 'reco-confidence-low';
+                confidenceIcon = 'fa-solid fa-circle-info';
+            }
+
+            let savingsMessage = '';
+            if (savings > 0 && found.length >= 2) {
+                savingsMessage = `<p class="reco-savings"><i class="fa-solid fa-arrow-trend-down"></i> You save <strong>Rs.\u202f${savings.toLocaleString('en-IN')}</strong> (${savingsPercent}% less) compared to the most expensive option.</p>`;
+            }
+
+            let unavailNote = '';
+            if (unavailCount > 0) {
+                const unavailStores = results.filter(r => !r.found || !r.price || r.price <= 0).map(r => r.store).join(', ');
+                unavailNote = `<p class="reco-unavail"><i class="fa-solid fa-circle-xmark"></i> Not available on: ${esc(unavailStores)}</p>`;
+            }
+
+            recoEl.innerHTML = `
+                <div class="reco-header-row">
+                    <div class="reco-store-block">
+                        <div class="reco-best-icon">
+                            <span class="reco-store-emoji">${storeIcon(bestResult.store)}</span>
+                            <i class="fa-solid fa-crown reco-crown"></i>
+                        </div>
+                        <div class="reco-best-info">
+                            <span class="reco-label">Best Place to Buy</span>
+                            <h3 class="reco-store-name">${esc(bestResult.store)}</h3>
+                            <span class="reco-price">&#8377;${bestResult.price.toLocaleString('en-IN')}</span>
+                        </div>
+                    </div>
+                    <div class="reco-confidence ${confidenceClass}">
+                        <i class="${confidenceIcon}"></i>
+                        <span>${confidenceLevel}</span>
+                    </div>
+                </div>
+                <div class="reco-details">
+                    <p class="reco-verdict"><i class="fa-solid fa-lightbulb"></i> Lowest price found at <strong>${esc(bestResult.store)}</strong> — <strong>&#8377;${bestResult.price.toLocaleString('en-IN')}</strong> across ${found.length} checked store${found.length > 1 ? 's' : ''}.</p>
+                    ${savingsMessage}
+                    ${unavailNote}
+                </div>
+                ${bestResult.url ? `<a href="${esc(bestResult.url)}" target="_blank" class="reco-buy-btn"><i class="fa-solid fa-cart-shopping"></i> Buy from ${esc(bestResult.store)}</a>` : ''}
+            `;
+        } else if (recoEl) {
+            recoEl.innerHTML = `
+                <div class="reco-details">
+                    <p class="reco-verdict"><i class="fa-solid fa-circle-info"></i> Could not determine prices for this product from any of the checked stores. The product may be out of stock or not available online.</p>
+                </div>
+            `;
+        }
+
+        // Update hero subtitle with savings info
+        const heroSub = document.getElementById('priceHeroSub');
+        if (heroSub) {
+            if (found.length >= 2 && savings > 0) {
+                const savePct = Math.round((savings / highest) * 100);
+                heroSub.innerHTML = `Save up to <strong style="color:#10b981">₹${savings.toLocaleString('en-IN')} (${savePct}%)</strong> by choosing the right store`;
+            } else if (found.length > 0) {
+                heroSub.textContent = `Found prices on ${found.length} store${found.length > 1 ? 's' : ''}`;
+            } else {
+                heroSub.textContent = 'No prices found across checked stores';
+            }
+        }
+
+        // Update stores-pill
+        const storesPill = document.getElementById('priceStoresChecked');
+        if (storesPill) storesPill.innerHTML = `<i class="fa-solid fa-store"></i> ${results.length} stores checked`;
+
+        // Build store-by-store comparison grid
+        const gridEl = document.getElementById('priceSummaryGrid');
+        if (gridEl) {
+            gridEl.innerHTML = '';
+            results.forEach((r, idx) => {
+                const hasPrice = r.found && r.price && r.price > 0;
+                const isLowest = hasPrice && r.price === lowest && found.length > 1;
+                const priceDiff = hasPrice && lowest > 0 ? r.price - lowest : 0;
+                const savePct = (hasPrice && highest > 0 && !isLowest) ? Math.round((priceDiff / highest) * 100) : 0;
+
+                const storeCard = document.createElement('div');
+                storeCard.className = 'store-compare-card' + (isLowest ? ' store-compare-best' : '') + (!hasPrice ? ' store-compare-unavail' : '');
+                storeCard.style.animationDelay = (idx * 0.08) + 's';
+
+                let badgeHTML, priceHTML, diffHTML = '';
+                if (!hasPrice) {
+                    badgeHTML = '<span class="scc-badge scc-badge-unavail"><i class="fa-solid fa-ban"></i> Unavailable</span>';
+                    priceHTML = '<span class="scc-price scc-price-na">—</span>';
+                } else if (isLowest) {
+                    badgeHTML = '<span class="scc-badge scc-badge-best"><i class="fa-solid fa-crown"></i> Best Price</span>';
+                    priceHTML = `<span class="scc-price scc-price-best">₹${r.price.toLocaleString('en-IN')}</span>`;
+                } else {
+                    badgeHTML = `<span class="scc-badge scc-badge-higher"><i class="fa-solid fa-arrow-trend-up"></i> +${savePct}% costlier</span>`;
+                    priceHTML = `<span class="scc-price">₹${r.price.toLocaleString('en-IN')}</span>`;
+                    diffHTML = `<span class="scc-diff">₹${priceDiff.toLocaleString('en-IN')} more than best</span>`;
+                }
+
+                storeCard.innerHTML = `
+                    <div class="scc-top">
+                        <span class="scc-emoji">${storeIcon(r.store)}</span>
+                        ${badgeHTML}
+                    </div>
+                    <span class="scc-name">${esc(r.store)}</span>
+                    ${priceHTML}
+                    ${diffHTML}
+                    ${r.url && hasPrice ? `<a href="${esc(r.url)}" target="_blank" class="scc-visit-btn"><i class="fa-solid fa-arrow-up-right-from-square"></i> Buy Here</a>` : ''}
+                `;
+                gridEl.appendChild(storeCard);
+            });
+        }
+
+        // Chart removed
+
+        // Reveal with animation
+        summaryEl.classList.remove('hidden');
+        summaryEl.style.animation = 'priceSummaryFadeIn 0.5s ease forwards';
+    }
+
+    function storeIcon(store) {
+        const s = (store || '').toLowerCase();
+        if (s.includes('amazon')) return '&#128230;';
+        if (s.includes('flipkart')) return '&#128722;';
+        if (s.includes('myntra')) return '&#128248;';
+        return '&#127978;';
+    }
+    function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+    // ── SIMILAR PRODUCTS RENDERER ──────────────────────────────────────────
+    function renderSimilarProducts(products) {
+        // Hide loading spinner
+        const loadingEl = document.getElementById('similarLoadingState');
+        if (loadingEl) loadingEl.classList.add('hidden');
+
+        const section = document.getElementById('similarProductsSection');
+        const grid = document.getElementById('similarProductsGrid');
+        const countEl = document.getElementById('similarProductsCount');
+        const noProducts = document.getElementById('similarNoProducts');
+
+        // No products found → show fallback
+        if (!products || products.length === 0) {
+            if (noProducts) noProducts.classList.remove('hidden');
+            return;
+        }
+
+        if (!section || !grid) return;
+
+        countEl.textContent = products.length + ' product' + (products.length > 1 ? 's' : '');
+        grid.innerHTML = '';
+
+        products.forEach((p, idx) => {
+            const card = document.createElement('div');
+            card.className = 'similar-product-card';
+            card.style.animationDelay = (idx * 0.07) + 's';
+
+            const hasPrice = p.price && p.price > 0;
+
+            const imageHTML = p.image
+                ? `<div class="similar-product-img-wrap"><img src="${esc(p.image)}" alt="${esc(p.name)}" class="similar-product-img" loading="lazy" onerror="this.parentElement.innerHTML='<div class=similar-product-img-placeholder><i class=fa-solid fa-box-open></i></div>'"></div>`
+                : `<div class="similar-product-img-wrap"><div class="similar-product-img-placeholder"><i class="fa-solid fa-box-open"></i></div></div>`;
+
+            // Detect platform from URL for the analyze button
+            let platform = 'amazon';
+            if (p.url.includes('flipkart')) platform = 'flipkart';
+            else if (p.url.includes('myntra')) platform = 'myntra';
+
+            card.innerHTML = `
+                ${imageHTML}
+                <div class="similar-product-info">
+                    <h5 class="similar-product-name" title="${esc(p.name)}">${esc(p.name)}</h5>
+                </div>
+                <div class="similar-product-actions">
+                    <button class="similar-product-analyze-btn" onclick="analyzeSimilarProduct('${esc(p.url)}', '${platform}')" title="Analyze reviews for this product">
+                        <i class="fa-solid fa-magnifying-glass-chart"></i> Analyze
+                    </button>
+                    <a href="${esc(p.url)}" target="_blank" class="similar-product-view-btn" title="View on ${platform}">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> View
+                    </a>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+
+        section.classList.remove('hidden');
+        section.style.animation = 'priceSummaryFadeIn 0.5s ease forwards';
+    }
+
+}) ();
+
+    // ── ANALYZE SIMILAR PRODUCT (global — called from onclick) ────────────────
+    function analyzeSimilarProduct(url, platform) {
+        // Try to communicate with the extension to start scraping
+        try {
+            window.postMessage({
+                type: 'TRUE_SPOT_ANALYZE_SIMILAR',
+                url: url,
+                platform: platform
+            }, '*');
+        } catch (e) {
+            console.error('[Trust-Score] Extension communication error:', e);
+        }
+
+        // Also fill the input and submit the form as a fallback
+        const input = document.querySelector("input[name='product_link']");
+        const form = document.getElementById('analyzeForm');
+        if (input && form) {
+            input.value = url;
+            // Update form action for platform detection
+            form.action = '/analyze/' + platform;
+            // Trigger submit (the bridge will intercept it)
+            form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        } else {
+            // Fallback: navigate to home with the URL pre-filled
+            window.location.href = '/?url=' + encodeURIComponent(url);
+        }
+    }
+</script>
+{% endif %}

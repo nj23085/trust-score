@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazon — Trust-Score</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body>
+    {% include '_privacy_policy.html' %}
+    {% include '_terms_conditions.html' %}
+    <div class="bg-mesh"></div>
+
+    <header class="site-header fade-in">
+        <div class="header-brand">
+            <h1>
+                <img src="{{ url_for('static', filename='logo 1.png') }}" alt="Project logo" class="project-logo">
+                Trust-Score
+            </h1>
+            <p>Amazon product review analysis</p>
+        </div>
+        <nav class="platform-nav">
+            <a href="/" class="nav-home"><i class="fa-solid fa-house"></i> Home</a>
+            <a href="/amazon" class="nav-amazon nav-active"><i class="fa-brands fa-amazon"></i> Amazon</a>
+            <a href="/flipkart" class="nav-flipkart"><i class="fa-solid fa-cart-shopping"></i> Flipkart</a>
+            <a href="/myntra" class="nav-myntra"><i class="fa-solid fa-shirt"></i> Myntra</a>
+        </nav>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <button id="themeToggle" class="icon-btn tooltip-container" type="button" aria-label="Toggle theme">
+                <i class="fa-solid fa-moon"></i>
+                <span class="tooltip">Toggle Theme</span>
+            </button>
+            {% if logged_in %}
+            <form action="/logout">
+                <button class="danger-btn" type="submit">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </header>
+
+    <main class="page-shell">
+
+        <div class="platform-banner amazon-banner slide-up">
+            <div class="platform-banner-icon amazon-icon">
+                <i class="fa-brands fa-amazon"></i>
+            </div>
+            <div>
+                <h2>Amazon Review Analysis</h2>
+                <p>Login required to scrape reviews from Amazon India</p>
+            </div>
+        </div>
+
+        {% if not logged_in %}
+        <section class="panel slide-up delay-1">
+            <div class="panel-head">
+                <h3><i class="fa-solid fa-lock brand-icon"></i> Authentication Required</h3>
+                <p>You need to login to Amazon to allow review scraping. A browser window will open for you to sign in.
+                </p>
+            </div>
+            <div style="text-align:center; padding: 20px 0">
+                <form action="/login">
+                    <button class="primary-btn glow-effect amazon-btn" type="submit">
+                        <i class="fa-brands fa-amazon"></i>
+                        Login to Amazon
+                    </button>
+                </form>
+            </div>
+        </section>
+        {% endif %}
+
+        {% if logged_in %}
+        <section class="panel slide-up delay-1">
+            <div class="panel-head">
+                <h3><i class="fa-solid fa-link brand-icon"></i> Product Link Input</h3>
+                <p>Paste a valid Amazon product URL to start scraping and classification.</p>
+            </div>
+            <form action="/analyze/amazon" method="POST" id="analyzeForm" class="analyze-form">
+                <input type="text" name="product_link" placeholder="https://www.amazon.in/dp/XXXXXXXXXX"
+                    autocomplete="off" required>
+                <button class="primary-btn glow-effect amazon-btn" type="submit">
+                    <i class="fa-solid fa-magnifying-glass-chart"></i>
+                    Analyze Reviews
+                </button>
+            </form>
+        </section>
+        {% endif %}
+
+        {% include '_results.html' %}
+
+    </main>
+
+    <footer class="site-footer fade-in delay-4">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4><i class="fa-solid fa-shield-halved"></i> Trust-Score</h4>
+                <p>AI-powered review authenticity analysis for Indian e-commerce platforms.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <a href="/">Home</a>
+                <a href="/privacy">Privacy Policy</a>
+                <a href="/terms">Terms &amp; Conditions</a>
+            </div>
+            <div class="footer-section">
+                <h4>Platforms</h4>
+                <a href="/amazon">Amazon</a>
+                <a href="/flipkart">Flipkart</a>
+                <a href="/myntra">Myntra</a>
+            </div>
+            <div class="footer-section">
+                <h4>Built With</h4>
+                <div class="footer-tech-badges">
+                    <span class="tech-badge">Flask</span>
+                    <span class="tech-badge">Scikit-learn</span>
+                    <span class="tech-badge">Chart.js</span>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Trust-Score Project <span class="heart">♥</span> AI Powered</p>
+        </div>
+    </footer>
+
+    {% include '_charts_js.html' %}
+</body>
+
+</html>

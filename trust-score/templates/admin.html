@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Trust-Score</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #0f172a;
+            color: #f1f5f9;
+            min-height: 100vh;
+        }
+
+        /* ---- Top Bar ---- */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 32px;
+            background: #1e293b;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .topbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .topbar-brand img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .topbar-brand h1 {
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .topbar-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: 'Outfit', sans-serif;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.85;
+        }
+
+        .btn-ghost {
+            background: rgba(255, 255, 255, 0.06);
+            color: #94a3b8;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+
+        /* ---- Product Header ---- */
+        .product-header {
+            padding: 24px 32px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .product-header h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+
+        .product-header span {
+            color: #64748b;
+            font-size: 0.9rem;
+            text-transform: capitalize;
+        }
+
+        /* ---- Stats ---- */
+        .stats-row {
+            display: flex;
+            gap: 16px;
+            padding: 20px 32px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            flex: 1;
+            min-width: 140px;
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 18px 22px;
+        }
+
+        .stat-card .label {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+        }
+
+        .stat-card .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .stat-card .value.green {
+            color: #10b981;
+        }
+
+        .stat-card .value.red {
+            color: #ef4444;
+        }
+
+        .stat-card .value.blue {
+            color: #3b82f6;
+        }
+
+        /* ---- Table ---- */
+        .table-section {
+            padding: 0 32px 32px 32px;
+        }
+
+        .table-wrap {
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+            max-height: 55vh;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        thead th {
+            background: #0f172a;
+            color: #94a3b8;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 14px 16px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        tbody td {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.9rem;
+            color: #cbd5e1;
+            vertical-align: top;
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .review-cell {
+            max-width: 500px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            line-height: 1.5;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            cursor: pointer;
+        }
+
+        .review-cell.expanded {
+            -webkit-line-clamp: unset;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-genuine {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+        }
+
+        .badge-fake {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+
+        .id-cell {
+            color: #64748b;
+            font-size: 0.8rem;
+        }
+
+        .confidence-cell {
+            font-weight: 600;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            display: block;
+            color: #334155;
+        }
+
+        /* ---- Responsive ---- */
+        @media (max-width: 768px) {
+            .topbar {
+                padding: 12px 16px;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+
+            .topbar-actions {
+                flex-wrap: wrap;
+            }
+
+            .stats-row {
+                padding: 16px;
+            }
+
+            .stat-card {
+                min-width: 100px;
+            }
+
+            .table-section {
+                padding: 0 16px 16px 16px;
+            }
+
+            .topbar-brand h1 {
+                font-size: 1.1rem;
+            }
+
+            .btn {
+                padding: 8px 14px;
+                font-size: 0.8rem;
+            }
+
+            .product-header {
+                padding: 16px;
+            }
+
+            .product-header h2 {
+                font-size: 1.05rem;
+                word-break: break-word;
+            }
+
+            .review-cell {
+                max-width: 260px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-row {
+                flex-direction: column;
+                gap: 10px;
+                padding: 12px;
+            }
+
+            .stat-card {
+                min-width: unset;
+            }
+
+            .stat-card .value {
+                font-size: 1.3rem;
+            }
+
+            .review-cell {
+                max-width: 180px;
+                -webkit-line-clamp: 2;
+                font-size: 0.8rem;
+            }
+
+            table {
+                min-width: 500px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Top Bar -->
+    <div class="topbar">
+        <div class="topbar-brand">
+            <img src="{{ url_for('static', filename='logo 1.png') }}" alt="Trust-Score">
+            <h1>Review Table</h1>
+        </div>
+        <div class="topbar-actions">
+            <a href="/" class="btn btn-ghost">
+                <i class="fa-solid fa-home"></i> Home
+            </a>
+            <a href="{{ url_for('admin_logout') }}" class="btn btn-danger">
+                <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Product Info -->
+    <div class="product-header">
+        <h2><i class="fa-solid fa-box"></i> {{ product }}</h2>
+        {% if platform %}<span><i class="fa-solid fa-store"></i> {{ platform }}</span>{% endif %}
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="label">Total Reviews</div>
+            <div class="value blue">{{ total }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Genuine</div>
+            <div class="value green">{{ genuine }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Fake</div>
+            <div class="value red">{{ fake }}</div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-section">
+        <div class="table-wrap">
+            <div class="table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Review</th>
+                            <th>Prediction</th>
+                            <th>Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for review in reviews %}
+                        <tr>
+                            <td class="id-cell">{{ loop.index }}</td>
+                            <td>
+                                <div class="review-cell" onclick="this.classList.toggle('expanded')"
+                                    title="Click to expand">
+                                    {{ review.review }}
+                                </div>
+                            </td>
+                            <td>
+                                <span
+                                    class="badge {% if review.prediction == 'fake' %}badge-fake{% else %}badge-genuine{% endif %}">
+                                    {{ review.prediction | title }}
+                                </span>
+                            </td>
+                            <td class="confidence-cell">{{ review.confidence }}%</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4">
+                                <div class="empty-state">
+                                    <i class="fa-solid fa-inbox"></i>
+                                    No product analyzed yet.<br>
+                                    Analyze a product first to see its reviews here.
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

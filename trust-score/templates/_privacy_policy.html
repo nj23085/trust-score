@@ -1,0 +1,181 @@
+<!-- ============================================================
+     PRIVACY POLICY OVERLAY
+     - First visit: blocks site until accepted
+     - Sidebar click (reopenPrivacy): opens for review, no blocking
+     - Dispatches "privacyAccepted" so T&C shows next
+     ============================================================ -->
+<div class="pp-overlay pp-hidden" id="privacyOverlay">
+    <div class="pp-backdrop"></div>
+    <div class="pp-modal" id="privacyModal">
+
+        <!-- Header -->
+        <div class="pp-header">
+            <div class="pp-header-icon">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+                <h2>Privacy Policy</h2>
+                <p class="pp-subtitle">Please review and accept our Privacy Policy to continue</p>
+            </div>
+        </div>
+
+        <!-- Scrollable Policy Content -->
+        <div class="pp-scroll-box" id="ppScrollBox">
+
+            <div class="pp-section">
+                <h3><i class="fa-solid fa-circle-info"></i> Introduction</h3>
+                <p>The organization, hereinafter referred to as <strong>"Trust-Score"</strong>, <strong>"we"</strong>,
+                    <strong>"our"</strong>, or <strong>"us"</strong>, places a strong emphasis on safeguarding user
+                    privacy. Any individual accessing or using the platform, referred to as <strong>"you"</strong> or
+                    <strong>"your"</strong>, can be assured that the information shared during the use of our service,
+                    including the AI-enabled shopping solution, is handled with due care and responsibility.</p>
+                <p>This Privacy Policy describes how we collect, utilize, manage, store, share, and protect your
+                    personal information when you use or interact with our platform through WhatsApp, website, or our
+                    mobile application.</p>
+                <p>This includes any engagement through text messages, product images, links, or browser extensions
+                    (including those labelled with "Trust-Score").</p>
+                <p>By accessing the platform, signing up, or using Trust-Score and indicating your consent during
+                    registration, you agree to the terms of this Privacy Policy. This policy does not extend to any
+                    third-party websites or services that may be accessed through our platform.</p>
+            </div>
+
+            <div class="pp-section">
+                <h3><i class="fa-solid fa-database"></i> Information We Collect</h3>
+                <p>We collect only the <strong>product URL</strong> voluntarily provided by the user and extract limited
+                    information, including the product identifier (ASIN) and country code, strictly for the purpose of
+                    conducting our analysis.</p>
+            </div>
+
+            <div class="pp-section">
+                <h3><i class="fa-solid fa-ban"></i> Information We Don't Collect</h3>
+                <ul>
+                    <li><i class="fa-solid fa-xmark"></i> We do <strong>not</strong> collect or store any personally
+                        identifiable information of customers.</li>
+                    <li><i class="fa-solid fa-xmark"></i> We do <strong>not</strong> collect or process customers'
+                        financial information.</li>
+                    <li><i class="fa-solid fa-xmark"></i> We do <strong>not</strong> track or store customers' browsing
+                        history.</li>
+                    <li><i class="fa-solid fa-xmark"></i> We do <strong>not</strong> collect or maintain passwords or
+                        login credentials, as no account creation is required.</li>
+                </ul>
+            </div>
+
+            <div class="pp-section">
+                <h3><i class="fa-solid fa-clock-rotate-left"></i> Data Retention &amp; Analysis Results</h3>
+                <p>We save the outcomes of our AI analysis, such as the authenticity score, percentage of fake reviews,
+                    adjusted rating, explanations, and examples of flagged reviews. This enables us to provide users
+                    with a shareable permanent link for analysing the same product again, making the process faster and
+                    more efficient.</p>
+                <p>We do <strong>not</strong> store IP addresses in our database or link them with analyses.</p>
+            </div>
+
+            <div class="pp-section">
+                <h3><i class="fa-brands fa-chrome"></i> Chrome Extension Permissions</h3>
+                <p>The Trust-Score Chrome Extension requires the following permissions to function:</p>
+                <ul>
+                    <li><i class="fa-solid fa-check"></i> <strong>Active Tab:</strong> To read product page content and
+                        extract review data from the currently active tab.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Storage:</strong> To save user preferences and cached
+                        analysis results locally on your device.</li>
+                    <li><i class="fa-solid fa-check"></i> <strong>Host Permissions:</strong> To access product pages on
+                        Amazon, Flipkart, and Myntra for review scraping.</li>
+                </ul>
+                <p>The extension operates <strong>entirely on the client side</strong> for data extraction. Scraped
+                    reviews are sent only to the Trust-Score server for ML analysis and are not shared with any third
+                    parties.</p>
+            </div>
+
+            <div class="pp-section">
+                <h3><i class="fa-solid fa-envelope"></i> Contact Us</h3>
+                <p>If you have any questions or concerns about this Privacy Policy, please reach out to us at
+                    <strong>support@trust-score.com</strong>.</p>
+            </div>
+
+            <div class="pp-scroll-end">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>You've reached the end of the Privacy Policy</span>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="pp-footer">
+            <label class="pp-checkbox-label" id="ppCheckboxLabel">
+                <input type="checkbox" id="ppAcceptCheckbox">
+                <span class="pp-checkmark"></span>
+                <span>I have read and accept the <strong>Privacy Policy</strong></span>
+            </label>
+
+            <div class="pp-actions">
+                <!-- Accept & Continue shown on first visit (T&C comes next) -->
+                <button class="pp-btn pp-btn-accept" id="ppAcceptBtn" disabled>
+                    <i class="fa-solid fa-lock"></i>
+                    <span>Accept &amp; Continue</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        const PP_KEY = "trust_score_privacy_accepted";
+        const TC_KEY = "trust_score_tc_accepted";
+        const overlay = document.getElementById("privacyOverlay");
+        const modal = document.getElementById("privacyModal");
+        const checkbox = document.getElementById("ppAcceptCheckbox");
+        const acceptBtn = document.getElementById("ppAcceptBtn");
+        const scrollBox = document.getElementById("ppScrollBox");
+
+        // ── Utility: show modal (used by sidebar reopen too) ──────────
+        function openPrivacyModal(isReopen) {
+            checkbox.checked = false;
+            acceptBtn.disabled = true;
+            acceptBtn.innerHTML = '<i class="fa-solid fa-lock"></i> <span>Accept &amp; Continue</span>';
+            overlay.classList.remove("pp-hidden", "pp-closing");
+            modal.style.animation = "none";
+            modal.offsetHeight;
+            modal.style.animation = "";
+            scrollBox.scrollTop = 0;
+
+            if (!isReopen) {
+                // First-visit: block all interaction behind overlay
+                document.body.classList.add("pp-no-scroll");
+            }
+        }
+
+        // ── First visit check ─────────────────────────────────────────
+        if (localStorage.getItem(PP_KEY) !== "true") {
+            openPrivacyModal(false);
+        }
+
+        // ── Sidebar reopen: listen for custom event from index.html ──
+        window.addEventListener("reopenPrivacy", function () {
+            openPrivacyModal(true);
+        });
+
+        // ── Checkbox enables Accept button ───────────────────────────
+        checkbox.addEventListener("change", function () {
+            acceptBtn.disabled = !this.checked;
+            acceptBtn.innerHTML = this.checked
+                ? '<i class="fa-solid fa-check"></i> <span>Accept &amp; Continue</span>'
+                : '<i class="fa-solid fa-lock"></i> <span>Accept &amp; Continue</span>';
+        });
+
+        // ── Accept & Continue ─────────────────────────────────────────
+        acceptBtn.addEventListener("click", function () {
+            if (!checkbox.checked) return;
+            localStorage.setItem(PP_KEY, "true");
+
+            overlay.classList.add("pp-closing");
+            setTimeout(function () {
+                overlay.classList.add("pp-hidden");
+                // Only unlock scroll if T&C is already accepted (reopen case)
+                if (localStorage.getItem(TC_KEY) === "true") {
+                    document.body.classList.remove("pp-no-scroll");
+                }
+                // Tell T&C overlay to appear next (first-visit flow)
+                window.dispatchEvent(new CustomEvent("privacyAccepted"));
+            }, 500);
+        });
+    })();
+</script>

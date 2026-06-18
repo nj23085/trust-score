@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trust-Score</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+
+<body>
+  <div class="popup-container">
+    <div class="popup-header">
+      <div class="logo-row">
+        <div class="logo-icon">🛡️</div>
+        <div>
+          <h1>Trust-Score</h1>
+          <p class="tagline">Check Karo Fir Buy Karo</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="popup-body">
+      <!-- Status: Detecting page -->
+      <div id="statusDetect" class="status-card">
+        <div class="status-icon detecting">
+          <div class="pulse-ring"></div>
+          <span>🔍</span>
+        </div>
+        <p>Detecting platform…</p>
+      </div>
+
+      <!-- Status: Supported platform -->
+      <div id="statusSupported" class="status-card" style="display:none;">
+        <div class="platform-badge" id="platformBadge">
+          <span id="platformIcon">🛒</span>
+          <span id="platformName">Platform</span>
+        </div>
+        <p class="supported-msg">This product page is supported!</p>
+        <button id="analyzeBtn" class="analyze-btn">
+          <span class="btn-icon">⚡</span>
+          Analyze Reviews
+        </button>
+        <p class="hint">Or paste a link on the <a href="https://your-app-name.onrender.com" target="_blank">Trust-Score
+            website</a>
+        </p>
+      </div>
+
+      <!-- Status: Not supported -->
+      <div id="statusUnsupported" class="status-card" style="display:none;">
+        <div class="status-icon unsupported">
+          <span>🚫</span>
+        </div>
+        <p>This page is not a supported product page.</p>
+        <p class="hint">Visit a product on Amazon, Flipkart, or Myntra, then click this extension.</p>
+        <a href="https://your-app-name.onrender.com" target="_blank" class="website-link">
+          Open Trust-Score Website →
+        </a>
+      </div>
+
+      <!-- Status: Scraping in progress -->
+      <div id="statusScraping" class="status-card" style="display:none;">
+        <div class="status-icon scraping">
+          <div class="spinner"></div>
+        </div>
+        <p id="scrapeMsg">Scraping reviews…</p>
+        <div class="progress-bar-container">
+          <div id="progressBar" class="progress-bar"></div>
+        </div>
+        <span id="scrapeCount" class="count-badge">0 reviews</span>
+      </div>
+    </div>
+
+    <div class="popup-footer">
+      <span>AI-Powered Fake Review Detection</span>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+
+</html>

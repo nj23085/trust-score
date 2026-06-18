@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trust-Score – Check Karo Phir Buy Karo</title>
+    <meta name="description"
+        content="Trust-Score – AI-powered fake review detection for Amazon, Flipkart, and Myntra products. Check Karo Phir Buy Karo.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/highcharts-3d.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga_id }}"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', '{{ ga_id }}');
+    </script>
+</head>
+
+<body>
+    {% include '_privacy_policy.html' %}
+    {% include '_terms_conditions.html' %}
+    <div class="bg-mesh"></div>
+
+    <!-- Dashboard Header -->
+    <header class="site-header">
+
+        <!-- LEFT MENU -->
+        <button class="menu-btn icon-btn" id="menuToggle">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+
+        <div class="header-brand">
+            <h1>
+                <img src="{{ url_for('static', filename='logo 1.png') }}" alt="Trust-Score logo" class="project-logo">
+                Trust-Score
+            </h1>
+        </div>
+
+        <div class="header-actions">
+            <button id="themeToggle" class="icon-btn tooltip-container" type="button" aria-label="Toggle theme">
+                <i class="fa-solid fa-moon"></i>
+                <span class="tooltip">Toggle Theme</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <div class="sidebar-user">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+                <h2>Trust-Score</h2>
+            </div>
+        </div>
+
+        <div class="sidebar-recent">
+            <div class="recent-title">
+                <i class="fa-solid fa-clock"></i>
+                <span>Recent Searches</span>
+            </div>
+            <ul class="recent-list">
+            </ul>
+        </div>
+
+        <!-- SETTINGS -->
+        <div class="sidebar-settings">
+            <div class="settings-title">
+                <i class="fa-solid fa-gear"></i>
+                <span>Settings</span>
+            </div>
+            <ul class="settings-list">
+                <li onclick="window.dispatchEvent(new CustomEvent('reopenTC')); document.body.classList.remove('sidebar-open');"
+                    style="cursor:pointer;">
+                    <i class="fa-solid fa-file-contract"></i>
+                    Terms of Use
+                </li>
+                <li onclick="window.dispatchEvent(new CustomEvent('reopenPrivacy')); document.body.classList.remove('sidebar-open');"
+                    style="cursor:pointer;">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    Privacy Policy
+                </li>
+                <li>
+                    <i class="fa-solid fa-headset"></i>
+                    Help & Support
+                </li>
+            </ul>
+
+        </div>
+    </div>
+
+    <!-- Sidebar overlay backdrop -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <main class="page-shell">
+
+        <!-- Extension Required Banner (auto-hides if extension detected) -->
+        <div class="ext-top-banner" id="extTopBanner" style="display:none;">
+            <div class="ext-top-banner-inner">
+                <div class="ext-top-banner-left">
+                    <div class="ext-top-banner-icon">
+                        <i class="fa-solid fa-puzzle-piece"></i>
+                    </div>
+                    <div class="ext-top-banner-text">
+                        <strong>Chrome Extension Required</strong>
+                        <span>Install the Trust-Score extension to analyze product reviews directly from Amazon, Flipkart &amp; Myntra.</span>
+                    </div>
+                </div>
+                <div class="ext-top-banner-actions">
+                    <a href="https://chrome.google.com/webstore/detail/YOUR_EXTENSION_ID" target="_blank"
+                        rel="noopener noreferrer" class="ext-top-banner-btn">
+                        <i class="fa-brands fa-chrome"></i>
+                        Add to Chrome
+                    </a>
+                    <button class="ext-top-banner-dismiss" id="extTopBannerDismiss" title="Dismiss">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Extension Required Card (shown when user analyzes without extension) -->
+        {% if error %}
+        <section class="ext-install-banner slide-up" id="extInstallBanner">
+            <div class="ext-install-inner">
+                <div class="ext-install-left">
+                    <div class="ext-install-icon">
+                        <i class="fa-brands fa-chrome"></i>
+                    </div>
+                    <div class="ext-install-text">
+                        <h3>Extension Required</h3>
+                        <p>Trust-Score uses a Chrome extension to scrape live reviews directly from Amazon, Flipkart &amp;
+                            Myntra. Install it once and it works automatically on every product page.</p>
+                        <ul class="ext-install-features">
+                            <li><i class="fa-solid fa-check"></i> Works on Amazon, Flipkart &amp; Myntra</li>
+                            <li><i class="fa-solid fa-check"></i> One-click analysis from any product page</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="ext-install-right">
+                    <a href="https://chrome.google.com/webstore/detail/YOUR_EXTENSION_ID" target="_blank"
+                        rel="noopener noreferrer" class="ext-install-cta">
+                        <i class="fa-brands fa-chrome"></i>
+                        Add to Chrome
+                    </a>
+                    <p class="ext-install-meta"><i class="fa-solid fa-shield-halved"></i> Reviewed &amp; approved by Google</p>
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        <!-- Hero Section -->
+        <section class="hero-card" id="hero">
+            <div class="hero-content">
+                <h2>Trust-Score</h2>
+                <p class="hero-tagline">Check Karo Phir Buy Karo</p>
+                <p>An AI-driven system that detects fake and deceptive product reviews across major Indian e-commerce
+                    platforms using advanced machine learning.</p>
+
+                <!-- BIG URL INPUT -->
+                <form id="analyzeForm" method="POST">
+                    <div class="url-box">
+                        <i class="fa-solid fa-link url-icon"></i>
+                        <input type="text" id="urlInput" name="product_link"
+                            placeholder="Paste product URL from Amazon, Flipkart, Myntra..." required />
+                        <button type="button" class="clear-btn" id="clearBtn" title="Clear">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
+                        <button type="submit" class="url-submit-btn">
+                            <i class="fa-solid fa-magnifying-glass-chart"></i>
+                            Analyze
+                        </button>
+                    </div>
+                    <div class="url-platform-hint" id="platformHint"></div>
+                </form>
+
+                {% if not show_results %}
+                <div
+                    style="display:flex; gap:20px; margin-top:40px; justify-content:center; flex-wrap:wrap; margin-bottom:24px;">
+                    <div class="metric-card" style="flex:1; min-width:140px; max-width:200px;">
+                        <div class="metric-icon blue"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
+                        <div>
+                            <h4>Reviews Analyzed</h4><strong>500K+</strong>
+                        </div>
+                    </div>
+                    <div class="metric-card" style="flex:1; min-width:140px; max-width:200px;">
+                        <div class="metric-icon green"><i class="fa-solid fa-bullseye"></i></div>
+                        <div>
+                            <h4>Accuracy</h4><strong>98%</strong>
+                        </div>
+                    </div>
+                    <div class="metric-card" style="flex:1; min-width:140px; max-width:200px;">
+                        <div class="metric-icon" style="background:rgba(139,92,246,0.15);color:#8b5cf6;"><i
+                                class="fa-solid fa-store"></i></div>
+                        <div>
+                            <h4>Platforms</h4><strong>3</strong>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        {% include '_results.html' %}
+
+        {% if not show_results %}
+        <!-- Disclaimer Banner -->
+        <section class="panel disclaimer-panel" id="disclaimer">
+            <div class="disclaimer-content">
+                <div class="disclaimer-icon"><i class="fa-solid fa-circle-info"></i></div>
+                <div>
+                    <h4>Disclaimer</h4>
+                    <p>Trust-Score is a smart AI-based system that helps identify misleading online reviews so shoppers
+                        can make clearer, safer purchasing decisions.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- What We Do -->
+        <section class="panel" id="whatWeDo">
+            <div class="panel-head">
+                <h3><i class="fa-solid fa-shield-halved brand-icon"></i> What We Do</h3>
+            </div>
+            <div class="about-text-block">
+                <p>We verify the <strong>authenticity of e-commerce product reviews</strong> using advanced AI and
+                    Natural Language Processing. Our system scrapes, analyzes, and classifies every review to help
+                    you distinguish <strong>genuine feedback from fake, paid, or misleading reviews</strong> — so
+                    you can shop with confidence.</p>
+                <p style="margin-top:12px;">We currently cover <strong>India's Top 3 E-Commerce Platforms</strong>,
+                    helping millions of shoppers make smarter, safer purchasing decisions every day.</p>
+
+                <div class="platform-cards-grid">
+                    <a href="/amazon" class="platform-card-mini amazon-card" id="btn-amazon">
+                        <div class="platform-card-icon amazon-icon-bg">
+                            <i class="fa-brands fa-amazon"></i>
+                        </div>
+                        <h4>Amazon</h4>
+                    </a>
+                    <a href="/flipkart" class="platform-card-mini flipkart-card" id="btn-flipkart">
+                        <div class="platform-card-icon flipkart-icon-bg">
+                            <i class="fa-solid fa-cart-shopping"></i>
+                        </div>
+                        <h4>Flipkart</h4>
+                    </a>
+                    <a href="/myntra" class="platform-card-mini myntra-card" id="btn-myntra">
+                        <div class="platform-card-icon myntra-icon-bg">
+                            <i class="fa-solid fa-shirt"></i>
+                        </div>
+                        <h4>Myntra</h4>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- About / Mission (inline) -->
+        <section class="panel">
+            <div class="panel-head">
+                <h3><i class="fa-solid fa-bullseye brand-icon"></i> Our Mission</h3>
+            </div>
+            <div class="about-text-block">
+                <p>Online reviews heavily influence purchasing decisions, but a significant percentage of reviews on
+                    e-commerce platforms are fake, misleading, or paid. Our mission is to <strong>empower
+                        consumers</strong> with AI-driven tools to identify deceptive reviews and make informed
+                    purchasing decisions.</p>
+                <p>This project uses <strong>Natural Language Processing (NLP)</strong> combined with behavioral
+                    analysis to classify reviews as genuine or fake with high accuracy.</p>
+            </div>
+        </section>
+
+        <!-- How It Works -->
+        <section class="panel">
+            <div class="panel-head">
+                <h3><i class="fa-solid fa-wand-magic-sparkles brand-icon"></i> How It Works</h3>
+            </div>
+            <div class="how-it-works-grid">
+                <div class="how-step">
+                    <div class="how-step-number">1</div>
+                    <div class="how-step-icon"><i class="fa-solid fa-link"></i></div>
+                    <h4>Paste Product URL</h4>
+                    <p>Copy any product URL from Amazon, Flipkart, or Myntra.</p>
+                </div>
+                <div class="how-step-connector"><i class="fa-solid fa-arrow-right"></i></div>
+                <div class="how-step">
+                    <div class="how-step-number">2</div>
+                    <div class="how-step-icon"><i class="fa-solid fa-robot"></i></div>
+                    <h4>AI Analyzes Reviews</h4>
+                    <p>Our ML model scrapes and classifies each review.</p>
+                </div>
+                <div class="how-step-connector"><i class="fa-solid fa-arrow-right"></i></div>
+                <div class="how-step">
+                    <div class="how-step-number">3</div>
+                    <div class="how-step-icon"><i class="fa-solid fa-chart-pie"></i></div>
+                    <h4>Get Detailed Results</h4>
+                    <p>View trust scores, charts, and individual review verdicts.</p>
+                </div>
+            </div>
+        </section>
+
+        {% endif %}
+
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4><i class="fa-solid fa-shield-halved"></i> Trust-Score</h4>
+                <p>AI-powered review authenticity analysis for Indian e-commerce platforms.</p>
+            </div>
+            <div class="footer-section">
+                <h4>Quick Links</h4>
+                <a href="/">Home</a>
+                <a href="/about">About Us</a>
+                <a href="/privacy">Privacy Policy</a>
+                <a href="/terms">Terms & Conditions</a>
+            </div>
+            <div class="footer-section">
+                <h4>Built With</h4>
+                <div class="footer-tech-badges">
+                    <span class="tech-badge">Flask</span>
+                    <span class="tech-badge">Scikit-learn</span>
+                    <span class="tech-badge">Highcharts</span>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 Trust-Score <span class="heart">♥</span> AI Powered</p>
+        </div>
+    </footer>
+
+    {% include '_charts_js.html' %}
+
+    <script>
+        // ── Sidebar Toggle ───────────────────────────────
+        (function () {
+            const menuBtn = document.getElementById("menuToggle");
+            const sidebar = document.getElementById("sidebar");
+            const sidebarOverlay = document.getElementById("sidebarOverlay");
+
+            menuBtn.addEventListener("click", () => {
+                document.body.classList.toggle("sidebar-open");
+            });
+
+            // Close sidebar when clicking outside
+            document.addEventListener("click", (e) => {
+                if (!sidebar.contains(e.target) && !menuBtn.contains(e.target)) {
+                    document.body.classList.remove("sidebar-open");
+                }
+            });
+        })();
+
+        // ── URL Input Logic ──────────────────────────────
+        (function () {
+            const form = document.getElementById("analyzeForm");
+            const input = document.getElementById("urlInput");
+            const clearBtn = document.getElementById("clearBtn");
+            const platformHint = document.getElementById("platformHint");
+
+            // Clear button
+            clearBtn?.addEventListener("click", () => {
+                input.value = "";
+                input.focus();
+                if (platformHint) platformHint.innerHTML = "";
+            });
+
+            // Live platform detection hint
+            input?.addEventListener("input", () => {
+                const url = input.value.toLowerCase();
+                if (url.includes("amazon")) {
+                    platformHint.innerHTML = '<i class="fa-brands fa-amazon"></i> Amazon detected';
+                    platformHint.className = "url-platform-hint hint-amazon";
+                } else if (url.includes("flipkart")) {
+                    platformHint.innerHTML = '<i class="fa-solid fa-cart-shopping"></i> Flipkart detected';
+                    platformHint.className = "url-platform-hint hint-flipkart";
+                } else if (url.includes("myntra")) {
+                    platformHint.innerHTML = '<i class="fa-solid fa-shirt"></i> Myntra detected';
+                    platformHint.className = "url-platform-hint hint-myntra";
+                } else {
+                    platformHint.innerHTML = "";
+                    platformHint.className = "url-platform-hint";
+                }
+            });
+
+            // Form submit — set action dynamically based on URL
+            form?.addEventListener("submit", function (e) {
+                const url = input.value.toLowerCase();
+                let platform = null;
+
+                if (url.includes("amazon")) {
+                    form.action = "/analyze/amazon";
+                    platform = "amazon";
+                } else if (url.includes("flipkart")) {
+                    form.action = "/analyze/flipkart";
+                    platform = "flipkart";
+                } else if (url.includes("myntra")) {
+                    form.action = "/analyze/myntra";
+                    platform = "myntra";
+                } else {
+                    e.preventDefault();
+                    alert("Please paste a valid Amazon, Flipkart, or Myntra product URL.");
+                }
+
+                // Track analysis submission in Google Analytics
+                if (platform && typeof gtag !== 'undefined') {
+                    gtag('event', 'product_analysis_submit', {
+                        'platform': platform,
+                        'url_length': url.length,
+                        'timestamp': new Date().toISOString()
+                    });
+                }
+            });
+        })();
+
+        // ── Recent Searches (localStorage) ──────────────
+        (function () {
+            const MAX_RECENT = 10;
+            const STORAGE_KEY = "true_spot_recent_searches";
+
+            function getSearches() {
+                try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+                catch (e) { return []; }
+            }
+
+            function saveSearch(entry) {
+                const searches = getSearches();
+                const filtered = searches.filter(s => s.product !== entry.product);
+                filtered.unshift(entry);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered.slice(0, MAX_RECENT)));
+            }
+
+            function timeAgo(ts) {
+                const diff = Math.floor((Date.now() - ts) / 1000);
+                if (diff < 60) return "Just now";
+                if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+                if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
+                if (diff < 604800) return Math.floor(diff / 86400) + "d ago";
+                return new Date(ts).toLocaleDateString();
+            }
+
+            function getPlatformIcon(product) {
+                const p = (product || "").toLowerCase();
+                if (p.includes("amazon")) return '<i class="fa-brands fa-amazon"></i>';
+                if (p.includes("flipkart")) return '<i class="fa-solid fa-cart-shopping"></i>';
+                if (p.includes("myntra")) return '<i class="fa-solid fa-shirt"></i>';
+                return '<i class="fa-solid fa-box"></i>';
+            }
+
+            function renderRecentList() {
+                const list = document.querySelector(".recent-list");
+                if (!list) return;
+                const searches = getSearches();
+
+                if (searches.length === 0) {
+                    list.innerHTML = '<li class="recent-empty"><i class="fa-solid fa-inbox"></i> No recent searches</li>';
+                    return;
+                }
+
+                list.innerHTML = searches.map(s => {
+                    const riskClass = s.fakePct > 50 ? "risk-high" : s.fakePct > 20 ? "risk-medium" : "risk-low";
+                    const shortName = s.product.length > 40 ? s.product.substring(0, 40) + "…" : s.product;
+                    return `<li class="recent-item" title="${s.product}">
+                        <div class="recent-item-icon">${getPlatformIcon(s.product)}</div>
+                        <div class="recent-item-info">
+                             <span class="recent-item-name">${shortName}</span>
+                             <span class="recent-item-meta">
+                                 <span class="recent-risk-badge ${riskClass}">${s.fakePct}% fake</span>
+                                 <span class="recent-time">${timeAgo(s.timestamp)}</span>
+                             </span>
+                        </div>
+                    </li>`;
+                }).join("");
+            }
+
+            const chartData = document.getElementById("chartData");
+            if (chartData && chartData.dataset.product) {
+                saveSearch({
+                    product: chartData.dataset.product,
+                    fakePct: parseFloat(chartData.dataset.fakepercentage) || 0,
+                    total: parseInt(chartData.dataset.total) || 0,
+                    timestamp: Date.now()
+                });
+            }
+
+            renderRecentList();
+        })();
+    </script>
+
+    <!-- Analytics Helper -->
+    <script src="{{ url_for('static', filename='analytics.js') }}"></script>
+
+    <!-- Extension Detection & Banner Control -->
+    <script>
+        (function () {
+            const SHOWN_KEY = "trust_score_ext_banner_shown";
+            const topBanner = document.getElementById("extTopBanner");
+            const topDismissBtn = document.getElementById("extTopBannerDismiss");
+            const errorBanner = document.getElementById("extInstallBanner"); // the big error card
+
+            let extensionDetected = false;
+
+            // Listen for extension ready signal
+            window.addEventListener("message", function (event) {
+                if (event.data && event.data.type === "TRUE_SPOT_EXTENSION_READY") {
+                    extensionDetected = true;
+                    if (topBanner) topBanner.style.display = "none";
+                    if (errorBanner) errorBanner.style.display = "none"; // hide the big card too
+                }
+            });
+
+            // If the purple top banner was already shown once before, never show it again
+            // (Note: we place this AFTER the event listener so the listener always registers)
+            if (localStorage.getItem(SHOWN_KEY) === "true") return;
+
+            // After 3 seconds, if extension not detected, show the purple top banner ONE TIME
+            setTimeout(function () {
+                if (!extensionDetected && topBanner) {
+                    topBanner.style.display = "";
+                    topBanner.style.animation = "extBannerSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)";
+                    // Mark as shown — it will never appear again
+                    localStorage.setItem(SHOWN_KEY, "true");
+                }
+            }, 3000);
+
+            // Dismiss button for the purple top banner
+            if (topDismissBtn && topBanner) {
+                topDismissBtn.addEventListener("click", function () {
+                    topBanner.style.animation = "extBannerSlideOut 0.3s ease forwards";
+                    setTimeout(function () {
+                        topBanner.style.display = "none";
+                    }, 300);
+                });
+            }
+        })();
+    </script>
+</body>
+
+</html>

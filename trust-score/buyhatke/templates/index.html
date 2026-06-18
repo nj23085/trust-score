@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BuyHatke Clone - Price Comparison</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1><span class="highlight">Buy</span>Hatke Clone</h1>
+            <p>Smart Shopping, Better Prices.</p>
+        </header>
+
+        <main>
+            <div class="search-section">
+                <form id="search-form" class="search-bar">
+                    <input type="text" id="product-url" placeholder="Paste product URL here (Amazon, Flipkart, Myntra)..." required>
+                    <button type="submit" class="btn-primary">Compare Price</button>
+                </form>
+                <div id="status-message" class="status-msg hidden"></div>
+            </div>
+
+            <div id="results-container" class="results-grid hidden">
+                <!-- Results will be injected here via JS -->
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
