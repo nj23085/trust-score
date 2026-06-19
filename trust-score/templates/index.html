@@ -41,9 +41,10 @@
         </button>
 
         <div class="header-brand">
-            <h1>
-                <img src="{{ url_for('static', filename='logo 1.png') }}" alt="Trust-Score logo" class="project-logo">
-                Trust-Score
+            <h1 style="margin: 0; display: flex; align-items: center;">
+                <a href="/" aria-label="Trust-Score Home" style="display: flex;">
+                    <img src="{{ url_for('static', filename='trust-karo-logo.png') }}" alt="Trust-Score" class="project-logo">
+                </a>
             </h1>
         </div>
 
@@ -92,7 +93,8 @@
                     <i class="fa-solid fa-shield-halved"></i>
                     Privacy Policy
                 </li>
-                <li>
+                <li onclick="window.dispatchEvent(new CustomEvent('openHelpSupport')); document.body.classList.remove('sidebar-open');"
+                    style="cursor:pointer;">
                     <i class="fa-solid fa-headset"></i>
                     Help & Support
                 </li>
@@ -541,6 +543,74 @@
                     }, 300);
                 });
             }
+        })();
+    </script>
+    <!-- Help & Support Modal -->
+    <div class="hs-overlay hs-hidden" id="helpSupportOverlay">
+        <div class="hs-backdrop"></div>
+        <div class="hs-modal" id="helpSupportModal">
+            <button class="hs-close-btn" id="hsCloseBtn" title="Close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="hs-header">
+                <div class="hs-header-icon">
+                    <i class="fa-solid fa-headset"></i>
+                </div>
+                <div>
+                    <h2>Help & Support</h2>
+                    <p class="hs-subtitle">We're here to help! Reach out to us anytime.</p>
+                </div>
+            </div>
+            <div class="hs-body">
+                <div class="hs-contact-card">
+                    <div class="hs-contact-icon">
+                        <i class="fa-solid fa-envelope"></i>
+                    </div>
+                    <div class="hs-contact-info">
+                        <span class="hs-contact-label">Email Us</span>
+                        <a href="mailto:supporttrustscore@gmail.com" class="hs-email-link" id="hsSupportEmail">
+                            <i class="fa-brands fa-google"></i>
+                            supporttrustscore@gmail.com
+                        </a>
+                    </div>
+                    <a href="mailto:supporttrustscore@gmail.com" class="hs-send-btn" title="Send Email">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </a>
+                </div>
+                <div class="hs-info-row">
+                    <i class="fa-solid fa-clock"></i>
+                    <span>We typically respond within 24 hours</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ── Help & Support Modal ────────────────────────────
+        (function () {
+            const overlay = document.getElementById("helpSupportOverlay");
+            const modal = document.getElementById("helpSupportModal");
+            const closeBtn = document.getElementById("hsCloseBtn");
+            const backdrop = overlay.querySelector(".hs-backdrop");
+
+            function openModal() {
+                overlay.classList.remove("hs-hidden", "hs-closing");
+                modal.style.animation = "none";
+                modal.offsetHeight;
+                modal.style.animation = "";
+            }
+
+            function closeModal() {
+                overlay.classList.add("hs-closing");
+                setTimeout(function () {
+                    overlay.classList.add("hs-hidden");
+                    overlay.classList.remove("hs-closing");
+                }, 400);
+            }
+
+            window.addEventListener("openHelpSupport", openModal);
+            closeBtn.addEventListener("click", closeModal);
+            backdrop.addEventListener("click", closeModal);
         })();
     </script>
 </body>

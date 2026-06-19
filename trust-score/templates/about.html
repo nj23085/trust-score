@@ -31,9 +31,10 @@
 
     <header class="site-header fade-in">
         <div class="header-brand">
-            <h1>
-                <img src="{{ url_for('static', filename='logo 1.png') }}" alt="Project logo" class="project-logo">
-                Trust-Score
+            <h1 style="margin: 0; display: flex; align-items: center;">
+                <a href="/" aria-label="Trust-Score Home" style="display: flex;">
+                    <img src="{{ url_for('static', filename='trust-karo-logo.png') }}" alt="Trust-Score" class="project-logo">
+                </a>
             </h1>
             <p>About this project</p>
         </div>
@@ -54,9 +55,9 @@
         <!-- About Hero -->
         <section class="hero-card slide-up about-hero">
             <div class="hero-content">
-                <div class="about-logo-showcase">
-                    <img src="{{ url_for('static', filename='logo 1.png') }}" alt="Trust-Score"
-                        class="about-logo-large">
+                <div class="about-logo-showcase" style="text-align: center;">
+                    <img src="{{ url_for('static', filename='trust-karo-logo.png') }}" alt="Trust-Score"
+                        class="about-logo-large" style="max-width: 250px; width: 100%; height: auto;">
                 </div>
                 <h2>About This Project</h2>
                 <p>An AI-powered system that detects fake and deceptive product reviews across major Indian e-commerce
