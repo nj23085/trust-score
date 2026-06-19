@@ -8,7 +8,7 @@
   "use strict";
 
   // Only run on Trust-Score website pages (local dev or live production)
-  if (!location.href.includes("localhost:8010") && !location.href.includes("127.0.0.1:8010") && !location.href.includes("your-app-name.onrender.com")) return;
+  if (!location.href.includes("localhost:8010") && !location.href.includes("127.0.0.1:8010") && !location.href.includes("trust-score-59lg.onrender.com")) return;
 
   console.log("[Trust-Score Bridge] Active on Trust-Score website");
 

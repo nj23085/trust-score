@@ -3,7 +3,7 @@
 // Orchestrates scraping in foreground tabs
 // ============================================
 
-const API_BASE = "https://your-app-name.onrender.com";
+const API_BASE = "https://trust-score-59lg.onrender.com";
 
 // ── Detect platform from URL ────────────────────────────────
 function detectPlatform(url) {

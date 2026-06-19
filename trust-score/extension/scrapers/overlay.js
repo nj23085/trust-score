@@ -234,7 +234,7 @@
     const errDiv = document.createElement("div");
     errDiv.innerHTML = `
       <div class="ts-error-msg">${message}</div>
-      <a class="ts-home-btn" href="https://your-app-name.onrender.com/">← Go Home</a>
+      <a class="ts-home-btn" href="https://trust-score-59lg.onrender.com/">← Go Home</a>
     `;
     elCard?.appendChild(errDiv);
   }

@@ -23,7 +23,7 @@
     "*://*.google.co.in/*",
     "http://localhost:8010/*",
     "http://127.0.0.1:8010/*",
-    "https://your-app-name.onrender.com/*"
+    "https://trust-score-59lg.onrender.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -41,7 +41,7 @@
       "matches": [
         "http://localhost:8010/*",
         "http://127.0.0.1:8010/*",
-        "https://your-app-name.onrender.com/*"
+        "https://trust-score-59lg.onrender.com/*"
       ],
       "js": [
         "content_scripts/website_bridge.js"
