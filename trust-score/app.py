@@ -21,6 +21,10 @@ import numpy as np
 from collections import Counter
 from scipy.sparse import hstack, csr_matrix
 from textblob import TextBlob
+import sqlite3
+import json
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
 
 
@@ -40,9 +44,86 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 # ============================================
 # GOOGLE ANALYTICS CONFIGURATION
 # ============================================
-# Replace G-XXXXXXXXXX with your real Measurement ID from analytics.google.com
 GOOGLE_ANALYTICS_ID = os.environ.get("GA_ID", "G-XXXXXXXXXX")
 app.config['GA_ID'] = GOOGLE_ANALYTICS_ID
+
+# ============================================
+# POSTGRESQL DATABASE (Supabase) FOR CACHING
+# ============================================
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+
+def get_db_conn():
+    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+
+def init_db():
+    try:
+        conn = get_db_conn()
+        c = conn.cursor()
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS analysis_cache (
+                url_key      TEXT PRIMARY KEY,
+                platform     TEXT,
+                product      TEXT,
+                result_json  TEXT,
+                search_count INTEGER DEFAULT 1,
+                created_at   TEXT,
+                updated_at   TEXT
+            )
+        """)
+        conn.commit()
+        conn.close()
+        print("[DB] analysis_cache table ready")
+    except Exception as e:
+        print(f"[DB] init_db error: {e}")
+
+init_db()
+
+def normalize_url(url):
+    url = url.strip().lower().split("?")[0].split("#")[0]
+    return url
+
+def get_cached_result(url):
+    key = normalize_url(url)
+    try:
+        conn = get_db_conn()
+        c = conn.cursor()
+        c.execute("SELECT result_json, platform, search_count FROM analysis_cache WHERE url_key=%s", (key,))
+        row = c.fetchone()
+        conn.close()
+        if row:
+            result = json.loads(row["result_json"])
+            result["_cached"] = True
+            result["_platform"] = row["platform"]
+            result["_search_count"] = row["search_count"]
+            return result
+    except Exception as e:
+        print(f"[Cache] Read error: {e}")
+    return None
+
+def save_cached_result(url, platform, product, result):
+    key = normalize_url(url)
+    now = time.strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        conn = get_db_conn()
+        c = conn.cursor()
+        c.execute("SELECT search_count FROM analysis_cache WHERE url_key=%s", (key,))
+        row = c.fetchone()
+        if row:
+            c.execute("""
+                UPDATE analysis_cache
+                SET result_json=%s, platform=%s, product=%s, search_count=search_count+1, updated_at=%s
+                WHERE url_key=%s
+            """, (json.dumps(result), platform, product, now, key))
+        else:
+            c.execute("""
+                INSERT INTO analysis_cache (url_key, platform, product, result_json, search_count, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, 1, %s, %s)
+            """, (key, platform, product, json.dumps(result), now, now))
+        conn.commit()
+        conn.close()
+        print(f"[Cache] Saved result for: {key}")
+    except Exception as e:
+        print(f"[Cache] Write error: {e}")
 
 # ============================================
 # IN-MEMORY STORE FOR LATEST ANALYSIS (no DB)
@@ -446,12 +527,65 @@ def get_result(job_id):
     # Always render results via the unified home page
     return render_template("index.html", ga_id=app.config['GA_ID'], **results)
 
-# ---- LEGACY FORM FALLBACKS ----
+# ============================================
+# PLATFORM DETECTION HELPER
+# ============================================
+def detect_platform(url):
+    url_lower = url.lower()
+    if "amazon" in url_lower:
+        return "amazon"
+    elif "flipkart" in url_lower:
+        return "flipkart"
+    elif "myntra" in url_lower:
+        return "myntra"
+    return None
+
+
+# ============================================
+# LEGACY FORM FALLBACKS — NOW CACHE-POWERED
+# Works on ALL devices: desktop, mobile, tablet
+# Desktop with extension → result saved to cache
+# Any device → if cached result exists, show it
+# ============================================
 @app.route("/analyze/amazon", methods=["POST"])
 @app.route("/analyze/flipkart", methods=["POST"])
 @app.route("/analyze/myntra", methods=["POST"])
 def analyze_legacy():
-    return render_template("index.html", error="Please install the TrusKaro Chrome Extension to analyze products. Server-side scraping is disabled.")
+    product_url = request.form.get("product_link", "").strip()
+    platform = detect_platform(product_url)
+
+    if not product_url:
+        return render_template("index.html",
+            ga_id=app.config['GA_ID'],
+            error="Please paste a valid product URL.")
+
+    if not platform:
+        return render_template("index.html",
+            ga_id=app.config['GA_ID'],
+            error="Please paste a valid Amazon, Flipkart, or Myntra product URL.")
+
+    # Check cache first — works for ALL devices
+    cached = get_cached_result(product_url)
+    if cached:
+        job_id = str(uuid.uuid4())
+        with jobs_lock:
+            jobs[job_id] = {
+                "status":      "done",
+                "progress":    100,
+                "message":     "Analysis complete!",
+                "result":      cached,
+                "platform":    cached.get("_platform", platform),
+                "source":      "cache",
+                "collected":   cached.get("total", 0),
+                "product_link": product_url,
+            }
+        return redirect(f"/result/{job_id}")
+
+    # No cache found — tell user to use extension on desktop
+    return render_template("index.html",
+        ga_id=app.config['GA_ID'],
+        error="No analysis found for this product yet. Please open this product on desktop and use the Trust-Score Chrome Extension to analyse it first. Once analysed, results will be available on all devices including mobile."
+    )
 
 # ============================================
 # API: EXTENSION-POWERED ANALYSIS
@@ -479,6 +613,10 @@ def api_analyze():
         return jsonify({"error": "Analysis returned no results"}), 500
     if "error" in results:
         return jsonify({"error": results["error"]}), 500
+
+    # Save to cache so mobile users can access this result later
+    if product_link:
+        save_cached_result(product_link, platform, product_title, results)
 
     job_id = str(uuid.uuid4())
     with jobs_lock:

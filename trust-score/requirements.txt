@@ -1,9 +1,10 @@
 flask==3.0.3
 flask-cors==4.0.1
-pandas==2.3.2
-numpy==2.3.3
-scipy==1.16.3
+psycopg2-binary==2.9.9
+pandas==<RUN_PIP_FREEZE>
+numpy==<RUN_PIP_FREEZE>
+scipy==<RUN_PIP_FREEZE>
 textblob==0.18.0.post0
-lightgbm==4.6.0
-scikit-learn==1.7.2
+lightgbm==<RUN_PIP_FREEZE>
+scikit-learn==<RUN_PIP_FREEZE>
 gunicorn==22.0.0
