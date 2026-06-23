@@ -63,6 +63,40 @@
     return `https://${hostname}/product-reviews/${asin}/?reviewerType=all_reviews&sortBy=recent`;
   }
 
+  // ── Amazon login detection ───────────────────────────────────
+  // Returns true if the user appears to be signed in to Amazon.
+  function isAmazonLoggedIn() {
+    // Method 1: Hard redirect to Amazon sign-in page
+    if (location.hostname.includes("amazon") &&
+      (location.pathname.startsWith("/ap/signin") || location.pathname.startsWith("/gp/sign-in"))) {
+      return false;
+    }
+
+    // Method 2: sign-in form present on this page
+    if (document.getElementById("ap_email") || document.getElementById("ap_password")) {
+      return false;
+    }
+
+    // Method 3: nav greeting says "Hello, Sign in" (not signed in)
+    const greet = document.querySelector("#nav-link-accountList .nav-line-1") ||
+      document.getElementById("nav-line-1");
+    if (greet) {
+      const t = (greet.innerText || greet.textContent || "").toLowerCase().trim();
+      if (t.includes("sign in")) return false;
+      if (t.startsWith("hello,") && !t.includes("sign in")) return true;
+    }
+
+    // Method 4: full account link text
+    const acctLink = document.getElementById("nav-link-accountList");
+    if (acctLink) {
+      const t = (acctLink.innerText || acctLink.textContent || "").toLowerCase();
+      if (t.includes("sign in") && !t.match(/hello,\s+\w/)) return false;
+    }
+
+    // Default: assume signed in (scraper will fail naturally if not)
+    return true;
+  }
+
   // ── Find "Show X more reviews" button by text — mirrors Python XPATH ────────
   // Python: //*[contains(text(),'Show') and contains(text(),'review')]
   function findShowMoreButton() {
@@ -101,9 +135,39 @@
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // STEP 1: Product page → navigate to clean reviews URL
+  // STEP 0: Check Amazon login status — if not signed in, ask background.js
+  //         to open a dedicated sign-in tab, wait for the user, then reload us.
   // ─────────────────────────────────────────────────────────────────────────────
   const currentUrl = location.href;
+
+  // Wait a moment for the page nav to render before checking login
+  await sleep(800);
+
+  if (!isAmazonLoggedIn()) {
+    console.log("[Trust-Score] Amazon not signed in — requesting login tab from background");
+
+    // Show a clean "please sign in" waiting state on the overlay
+    if (window.__tsOverlay) {
+      window.__tsOverlay.showLoginWaiting();
+    } else {
+      reportProgress(0, "Please sign in to Amazon — a sign-in tab will open…");
+    }
+
+    // Tell background.js to open the sign-in tab and handle everything
+    try {
+      chrome.runtime.sendMessage({ action: "needsAmazonLogin" });
+    } catch (e) {
+      console.error("[Trust-Score] Could not send needsAmazonLogin:", e);
+    }
+
+    // This script stops here. background.js will reload this tab after sign-in,
+    // which re-injects overlay.js + amazon.js and the scrape runs normally.
+    return;
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // STEP 1: Product page → navigate to clean reviews URL
+  // ─────────────────────────────────────────────────────────────────────────────
 
   if (!currentUrl.includes("product-reviews")) {
     let productTitle = "Amazon Product";

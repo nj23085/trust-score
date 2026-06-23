@@ -236,6 +236,226 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     sendResponse({ status: 'started' });
     return true;
   }
+
+  // ---------- AMAZON LOGIN REQUIRED (from amazon.js content script) ----------
+  // 1. Shows a 3-second warning on the scrape tab overlay
+  // 2. Opens a dedicated Amazon sign-in tab
+  // 3. Polls for login completion
+  // 4. Closes sign-in tab, switches back to scrape tab, re-injects scraper
+  if (msg.action === "needsAmazonLogin") {
+    const scrapeTabId = sender.tab ? sender.tab.id : null;
+    const platform = msg.platform || "amazon";
+    if (!scrapeTabId) { sendResponse({ ok: false }); return false; }
+
+    console.log("[Trust-Score] Login required — showing warning then opening sign-in tab", scrapeTabId);
+
+    // ── Step A: show 3-second countdown on the scrape tab overlay ──────────
+    // Then open the sign-in tab after the delay so user understands what's happening
+    let countdown = 3;
+
+    function sendCountdown(n) {
+      chrome.tabs.sendMessage(scrapeTabId, {
+        action: "ts_login_countdown",
+        seconds: n
+      }).catch(() => { });
+    }
+
+    sendCountdown(countdown);
+
+    const countdownTimer = setInterval(() => {
+      countdown--;
+      if (countdown <= 0) {
+        clearInterval(countdownTimer);
+        openSignInTab();
+      } else {
+        sendCountdown(countdown);
+      }
+    }, 1000);
+
+    // ── Step B: open Amazon sign-in tab ─────────────────────────────────────
+    function openSignInTab() {
+      chrome.tabs.create(
+        { url: "https://www.amazon.in/gp/sign-in.html", active: true },
+        (loginTab) => {
+          if (chrome.runtime.lastError || !loginTab) {
+            console.error("[Trust-Score] Could not open login tab:", chrome.runtime.lastError);
+            return;
+          }
+
+          const loginTabId = loginTab.id;
+          console.log("[Trust-Score] Sign-in tab opened:", loginTabId);
+
+          let pollInterval = null;
+          let giveUpTimer = null;
+          let loginDetected = false;
+          let tabReady = false;
+
+          function cleanup() {
+            if (pollInterval) clearInterval(pollInterval);
+            if (giveUpTimer) clearTimeout(giveUpTimer);
+            chrome.tabs.onUpdated.removeListener(onLoginTabUpdated);
+            chrome.tabs.onRemoved.removeListener(onLoginTabClosed);
+          }
+
+          // Mark tab ready when it finishes loading
+          function onLoginTabUpdated(tabId, info) {
+            if (tabId !== loginTabId) return;
+            if (info.status === "complete") tabReady = true;
+          }
+          chrome.tabs.onUpdated.addListener(onLoginTabUpdated);
+
+          // ── Step C: on login success — switch back + reload + re-inject ──────
+          function onLoginSuccess() {
+            if (loginDetected) return;
+            loginDetected = true;
+            cleanup();
+            console.log("[Trust-Score] Login detected — closing sign-in tab, resuming scrape");
+
+            // Close the sign-in tab
+            chrome.tabs.remove(loginTabId, () => { });
+
+            // 1. Switch focus back to the scrape tab immediately
+            chrome.tabs.update(scrapeTabId, { active: true }, () => {
+              if (chrome.runtime.lastError) {
+                console.warn("[Trust-Score] Scrape tab gone:", chrome.runtime.lastError.message);
+                return;
+              }
+
+              // 2. Show green "signed in" banner on the existing overlay
+              chrome.tabs.sendMessage(scrapeTabId, { action: "ts_login_success" }).catch(() => { });
+
+              // 3. After a short pause (cookies propagate), reload the scrape tab
+              setTimeout(() => {
+                chrome.tabs.reload(scrapeTabId, { bypassCache: true }, () => {
+                  if (chrome.runtime.lastError) {
+                    console.warn("[Trust-Score] Could not reload scrape tab:", chrome.runtime.lastError.message);
+                    return;
+                  }
+                  console.log("[Trust-Score] Scrape tab reloading — will inject scraper when complete");
+                });
+
+                // 4. Listen for the reload to finish, then inject overlay + scraper
+                function onScrapeTabReloaded(tabId, info, tab) {
+                  if (tabId !== scrapeTabId) return;
+                  if (info.status !== "complete") return;
+
+                  // Make sure we're still on an Amazon page (not about:blank mid-redirect)
+                  const url = tab.url || "";
+                  if (!url.includes("amazon.")) return;
+
+                  chrome.tabs.onUpdated.removeListener(onScrapeTabReloaded);
+                  console.log("[Trust-Score] Scrape tab fully loaded — injecting overlay + scraper");
+
+                  // Small settle delay so Amazon's nav renders before amazon.js checks login
+                  setTimeout(() => {
+                    chrome.scripting.executeScript(
+                      { target: { tabId: scrapeTabId }, files: ["scrapers/overlay.js"] },
+                      () => {
+                        if (chrome.runtime.lastError) {
+                          console.log("[Trust-Score] Overlay injection note:", chrome.runtime.lastError.message);
+                        }
+                        chrome.scripting.executeScript(
+                          { target: { tabId: scrapeTabId }, files: ["scrapers/amazon.js"] },
+                          () => {
+                            if (chrome.runtime.lastError) {
+                              console.error("[Trust-Score] Scraper injection error:", chrome.runtime.lastError.message);
+                            } else {
+                              console.log("[Trust-Score] amazon.js re-injected after login — scraping started");
+                            }
+                          }
+                        );
+                      }
+                    );
+                  }, 900);
+                }
+                chrome.tabs.onUpdated.addListener(onScrapeTabReloaded);
+
+              }, 1200); // wait for cookies to propagate before reload
+            });
+          }
+
+          // If user closes sign-in tab manually
+          function onLoginTabClosed(tabId) {
+            if (tabId !== loginTabId) return;
+            if (loginDetected) return;
+            cleanup();
+            console.warn("[Trust-Score] Sign-in tab closed without login detected");
+            chrome.tabs.sendMessage(scrapeTabId, {
+              action: "true_spot_error",
+              message: "Sign-in tab was closed before logging in. Please click Analyze again after signing in to Amazon."
+            }).catch(() => { });
+          }
+          chrome.tabs.onRemoved.addListener(onLoginTabClosed);
+
+          // ── Step D: poll sign-in tab for login completion ────────────────────
+          pollInterval = setInterval(() => {
+            if (!tabReady) return;
+
+            chrome.tabs.get(loginTabId, (tab) => {
+              if (chrome.runtime.lastError) { cleanup(); return; }
+
+              const tabUrl = tab.url || "";
+
+              // Still on an auth page — keep waiting
+              const onAuthPage = (
+                tabUrl.includes("/ap/signin") ||
+                tabUrl.includes("/gp/sign-in") ||
+                tabUrl.includes("/gp/flex/sign-in") ||
+                tabUrl.includes("/ap/register") ||
+                tabUrl.includes("/ap/mfa") ||
+                tabUrl.includes("signin") ||
+                tabUrl.includes("sign-in") ||
+                tabUrl === "" || tabUrl === "about:blank"
+              );
+              if (onAuthPage) return;
+
+              // Must still be on Amazon domain
+              if (!tabUrl.includes("amazon.in") && !tabUrl.includes("amazon.com")) return;
+
+              // Page is a normal Amazon page — verify via DOM
+              tabReady = false; // block re-entry until next load completes
+              chrome.scripting.executeScript({
+                target: { tabId: loginTabId },
+                func: () => {
+                  const greet = document.querySelector("#nav-link-accountList .nav-line-1") ||
+                    document.querySelector("#nav-line-1") ||
+                    document.querySelector("[data-nav-role='signin'] .nav-line-1");
+                  if (greet) {
+                    const t = (greet.innerText || greet.textContent || "").toLowerCase().trim();
+                    if (t.startsWith("hello,") && !t.includes("sign in")) return true;
+                    if (t.includes("sign in")) return false;
+                  }
+                  return !document.getElementById("ap_email");
+                }
+              }, (results) => {
+                if (chrome.runtime.lastError) { tabReady = true; return; }
+                const loggedIn = results && results[0] && results[0].result;
+                if (loggedIn) {
+                  onLoginSuccess();
+                } else {
+                  tabReady = true; // keep polling
+                }
+              });
+            });
+          }, 1500);
+
+          // Give up after 10 minutes
+          giveUpTimer = setTimeout(() => {
+            if (loginDetected) return;
+            cleanup();
+            chrome.tabs.remove(loginTabId, () => { });
+            chrome.tabs.sendMessage(scrapeTabId, {
+              action: "true_spot_error",
+              message: "Amazon sign-in timed out after 10 minutes. Please try again."
+            }).catch(() => { });
+          }, 10 * 60 * 1000);
+        }
+      );
+    }
+
+    sendResponse({ ok: true });
+    return true;
+  }
 });
 
 // ============================================================

@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Trust-Score — Fake Review Detector",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Detect fake reviews, compare prices & find similar products on Amazon, Flipkart & Myntra. Shop smarter!",
   "icons": {
     "16": "icons/icon16.png",

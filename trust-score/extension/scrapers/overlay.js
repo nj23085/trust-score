@@ -239,8 +239,124 @@
     elCard?.appendChild(errDiv);
   }
 
+  // ── Login Waiting State ──────────────────────────────────────
+  // Phase 1 (countdown): shows "Opening sign-in tab in Xs…"
+  // Phase 2 (waiting):   shows pulsing "Waiting for you to sign in…"
+  // Phase 3 (success):   shows green "Signed in! Resuming scraping…"
+  function showLoginWaiting() {
+    if (elMsg) elMsg.textContent = "Amazon sign-in required";
+    if (elBar) elBar.style.width = "0%";
+    if (elPct) elPct.textContent = "0%";
+    if (elCount) elCount.textContent = "0";
+
+    // Add pulse animation
+    if (!document.getElementById("ts-pulse-style")) {
+      const s = document.createElement("style");
+      s.id = "ts-pulse-style";
+      s.textContent = `
+        @keyframes tsPulse {
+          0%,100%{opacity:1;transform:scale(1)}
+          50%{opacity:0.4;transform:scale(0.75)}
+        }
+        @keyframes tsCountRing {
+          from { stroke-dashoffset: 88; }
+          to   { stroke-dashoffset: 0; }
+        }
+      `;
+      document.head.appendChild(s);
+    }
+
+    const infoDiv = document.createElement("div");
+    infoDiv.id = "ts-login-waiting";
+    infoDiv.innerHTML = `
+      <div style="
+        margin-top:18px;padding:20px;
+        background:rgba(251,191,36,0.08);
+        border:1px solid rgba(251,191,36,0.30);
+        border-radius:14px;text-align:left;
+      ">
+        <div style="font-size:15px;font-weight:700;color:#fbbf24;margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+          <span>🔐</span> You are not signed in to Amazon
+        </div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.70);line-height:1.6;margin-bottom:14px;">
+          A sign-in tab is opening. Sign in to Amazon there —
+          <strong style="color:#fbbf24;">this page will automatically resume</strong> once detected.
+          You don't need to do anything else here.
+        </div>
+
+        <!-- Countdown phase -->
+        <div id="ts-countdown-box" style="
+          display:flex;align-items:center;gap:12px;
+          padding:12px 14px;background:rgba(255,255,255,0.05);
+          border-radius:10px;font-size:13px;color:rgba(255,255,255,0.55);
+        ">
+          <svg width="32" height="32" viewBox="0 0 32 32">
+            <circle cx="16" cy="16" r="14" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="3"/>
+            <circle id="ts-count-ring" cx="16" cy="16" r="14" fill="none"
+              stroke="#fbbf24" stroke-width="3"
+              stroke-dasharray="88" stroke-dashoffset="88"
+              stroke-linecap="round"
+              transform="rotate(-90 16 16)"
+              style="transition:stroke-dashoffset 0.9s linear;"/>
+          </svg>
+          <span id="ts-countdown-text">Opening sign-in tab in <strong id="ts-count-num" style="color:#fbbf24;">3</strong>s…</span>
+        </div>
+
+        <!-- Waiting phase (hidden initially) -->
+        <div id="ts-waiting-box" style="display:none;align-items:center;gap:10px;
+          padding:12px 14px;background:rgba(255,255,255,0.05);
+          border-radius:10px;font-size:13px;color:rgba(255,255,255,0.55);">
+          <div style="width:10px;height:10px;border-radius:50%;background:#fbbf24;flex-shrink:0;
+            animation:tsPulse 1.4s ease-in-out infinite;"></div>
+          <span>Waiting for you to sign in on the new tab…</span>
+        </div>
+
+        <!-- Success phase (hidden initially) -->
+        <div id="ts-login-success-box" style="display:none;align-items:center;gap:10px;
+          padding:12px 14px;background:rgba(52,211,153,0.10);border:1px solid rgba(52,211,153,0.3);
+          border-radius:10px;font-size:13px;color:#34d399;">
+          <span>✅</span>
+          <span>Signed in! Resuming scraping on this page…</span>
+        </div>
+      </div>
+    `;
+    elCard?.appendChild(infoDiv);
+  }
+
+  // ── Update countdown number from background.js message ──────
+  function updateCountdown(seconds) {
+    const numEl = document.getElementById("ts-count-num");
+    const ringEl = document.getElementById("ts-count-ring");
+    if (numEl) numEl.textContent = seconds;
+    if (ringEl) {
+      // dashoffset 88 = empty, 0 = full; animate from 88→0 over 3s
+      const fraction = (3 - seconds) / 3;
+      ringEl.style.strokeDashoffset = 88 - (88 * fraction);
+    }
+    if (seconds <= 0) {
+      // Switch from countdown phase to waiting phase
+      const cdBox = document.getElementById("ts-countdown-box");
+      const wBox = document.getElementById("ts-waiting-box");
+      if (cdBox) cdBox.style.display = "none";
+      if (wBox) wBox.style.display = "flex";
+      if (elMsg) elMsg.textContent = "Sign-in tab opened — waiting for you…";
+    }
+  }
+
+  // ── Show success state after login detected ──────────────────
+  function showLoginSuccess() {
+    const wBox = document.getElementById("ts-waiting-box");
+    const sBox = document.getElementById("ts-login-success-box");
+    if (wBox) wBox.style.display = "none";
+    if (sBox) sBox.style.display = "flex";
+    if (elMsg) elMsg.textContent = "Signed in! Resuming…";
+    if (elBar) elBar.style.width = "5%";
+    if (elPct) elPct.textContent = "5%";
+    if (elSpinner) elSpinner.style.borderTopColor = "#34d399";
+  }
+
   // Expose globally for scraper scripts
-  window.__tsOverlay = { update, setStage, showError };
+  window.__tsOverlay = { update, setStage, showError, showLoginWaiting };
 
   // ── Listen for messages from background.js ──────────────────
   chrome.runtime.onMessage.addListener((msg) => {
@@ -253,6 +369,12 @@
     }
     if (msg.action === "true_spot_error") {
       showError(msg.message || "An unknown error occurred.");
+    }
+    if (msg.action === "ts_login_countdown") {
+      updateCountdown(msg.seconds);
+    }
+    if (msg.action === "ts_login_success") {
+      showLoginSuccess();
     }
   });
 
