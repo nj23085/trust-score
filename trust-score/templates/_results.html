@@ -1,5 +1,3 @@
-
-
 <!-- ============================================================ -->
 <!-- LIVE PROGRESS OVERLAY  (shown when job_id is present)        -->
 <!-- ============================================================ -->
@@ -376,9 +374,9 @@
             </article>
         </div>
         {% endif %}{# end no_reviews else #}
-    </div> <!-- Close panel-overview -->
+        </div> <!-- Close panel-overview -->
 
-    <div class="dashboard-panel" id="panel-analysis" role="tabpanel">
+        <div class="dashboard-panel" id="panel-analysis" role="tabpanel">
             {% if no_reviews %}
             <div class="no-reviews-state" style="margin-top:20px;">
                 <div class="no-reviews-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
@@ -469,10 +467,10 @@
         </div>
 
         {% endif %}{# end no_reviews else in analysis #}
-    </div> <!-- Close panel-analysis -->
+        </div> <!-- Close panel-analysis -->
 
-    <!-- ======== TAB 3: PRICE COMPARISON ======== -->
-    <div class="dashboard-panel" id="panel-prices" role="tabpanel">
+        <!-- ======== TAB 3: PRICE COMPARISON ======== -->
+        <div class="dashboard-panel" id="panel-prices" role="tabpanel">
             <div id="priceMainContainer">
 
                 <!-- RESULTS VIEW (hidden until data arrives) -->
@@ -553,7 +551,10 @@
 
             <!-- Loading state (shown until results arrive) -->
             <div id="similarLoadingState" class="price-loading-state">
-                <div class="price-loading-spinner"></div>
+                <div class="price-loading-orb">
+                    <div class="price-loading-spinner"></div>
+                    <i class="fa-solid fa-layer-group price-loading-icon"></i>
+                </div>
                 <h4>Finding similar products&hellip;</h4>
                 <p>Scraping recommendations from the product page</p>
                 <div class="price-progress-dots">

@@ -1827,6 +1827,13 @@ tbody tr:last-child td {
     display: block;
 }
 
+#panel-similar.active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 300px;
+}
+
 @keyframes panelFadeIn {
     from {
         opacity: 0;
@@ -3515,6 +3522,8 @@ tbody tr:last-child td {
     border-top-color: #6366f1;
     border-radius: 50%;
     animation: priceSpinAnim 0.9s linear infinite;
+    flex-shrink: 0;
+    align-self: center;
 }
 
 @keyframes priceSpinAnim {
@@ -6073,6 +6082,7 @@ body.pp-no-scroll {
         opacity: 0;
         transform: translateY(-16px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -6084,6 +6094,7 @@ body.pp-no-scroll {
         opacity: 1;
         transform: translateY(0);
     }
+
     to {
         opacity: 0;
         transform: translateY(-16px);
@@ -6159,13 +6170,25 @@ body.pp-no-scroll {
 }
 
 @keyframes hsFadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes hsFadeOut {
-    from { opacity: 1; transform: scale(1); }
-    to { opacity: 0; transform: scale(0.96); }
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    to {
+        opacity: 0;
+        transform: scale(0.96);
+    }
 }
 
 .hs-backdrop {
@@ -6196,8 +6219,15 @@ body.pp-no-scroll {
 }
 
 @keyframes hsSlideUp {
-    from { opacity: 0; transform: translateY(30px) scale(0.97); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .dark-mode .hs-modal {

@@ -45,11 +45,15 @@
 
     // =========================================
     // LEGACY LOADING OVERLAY (no job_id path)
-    // Only fires if there is NO job_id on the page
+    // Only fires when the extension is NOT active (homeLoadingOverlay not showing)
     // =========================================
     const analyzeForm = document.getElementById("analyzeForm");
-    if (analyzeForm && !document.getElementById("loadingOverlay")?.style.display.includes("flex")) {
+    if (analyzeForm) {
         analyzeForm.addEventListener("submit", function () {
+            // If the home overlay is already showing (extension active), do nothing
+            const homeOvl = document.getElementById("homeLoadingOverlay");
+            if (homeOvl && homeOvl.style.display === "flex") return;
+
             const overlay = document.getElementById("loadingOverlay");
             const bar = document.getElementById("progressBar");
             if (!overlay) return;
@@ -270,7 +274,7 @@
         if (reviewsDataEl) {
             try {
                 reviews = JSON.parse(reviewsDataEl.textContent);
-            } catch(e) {}
+            } catch (e) { }
         }
 
         // ---- Review Length Horizontal Bar Chart (Changed to Vertical 3D Column) ----
@@ -280,7 +284,7 @@
             let genuineTotalWords = 0;
             let fakeCountLen = 0;
             let genuineCountLen = 0;
-            
+
             reviews.forEach(r => {
                 const len = r.review ? r.review.trim().split(/\s+/).length : 0;
                 if (r.prediction === 'fake') {
@@ -291,7 +295,7 @@
                     genuineCountLen++;
                 }
             });
-            
+
             const avgFakeLen = fakeCountLen > 0 ? Math.round(fakeTotalWords / fakeCountLen) : 0;
             const avgGenLen = genuineCountLen > 0 ? Math.round(genuineTotalWords / genuineCountLen) : 0;
 
