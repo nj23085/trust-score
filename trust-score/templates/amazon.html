@@ -12,6 +12,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='enhancements.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='chatbot.css') }}">
 </head>
 
 <body>
@@ -132,6 +134,7 @@
     </footer>
 
     {% include '_charts_js.html' %}
+    {% include '_assistant_widgets.html' %}
 </body>
 
 </html>

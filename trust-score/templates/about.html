@@ -13,6 +13,8 @@
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='enhancements.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='chatbot.css') }}">
 
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga_id }}"></script>
@@ -55,8 +57,7 @@
         <section class="hero-card slide-up about-hero">
             <div class="hero-content">
                 <div class="about-logo-showcase">
-                    <img src="{{ url_for('static', filename='t.jpeg') }}" alt="Trust-Score"
-                        class="about-logo-large">
+                    <img src="{{ url_for('static', filename='t.jpeg') }}" alt="Trust-Score" class="about-logo-large">
                 </div>
                 <h2>About This Project</h2>
                 <p>An AI-powered system that detects fake and deceptive product reviews across major Indian e-commerce
@@ -241,6 +242,7 @@
 
         document.querySelectorAll('.slide-up, .fade-in').forEach(el => observer.observe(el));
     </script>
+    {% include '_assistant_widgets.html' %}
 </body>
 
 </html>

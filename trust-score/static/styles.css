@@ -1752,8 +1752,8 @@ tbody tr:last-child td {
 
 .dashboard-tabs {
     display: flex;
-    gap: 6px;
-    padding: 6px;
+    gap: 8px;
+    padding: 8px;
     background: var(--surface-2);
     border-radius: var(--radius-pill);
     margin-bottom: 28px;
@@ -1770,14 +1770,14 @@ tbody tr:last-child td {
 .dashboard-tab {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 16px 28px;
+    gap: 10px;
+    padding: 20px 36px;
     border: none;
     border-radius: var(--radius-pill);
     background: transparent;
     color: var(--text-2);
     font-family: inherit;
-    font-size: 1.05rem;
+    font-size: 1.15rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);

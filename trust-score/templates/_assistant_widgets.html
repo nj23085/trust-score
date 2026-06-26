@@ -1,0 +1,84 @@
+<!-- ============================================================ -->
+<!-- POPUP 1: WELCOME / FEATURE OVERVIEW                          -->
+<!-- (shown once per visitor, on whichever page they land on)    -->
+<!-- ============================================================ -->
+<div class="tg-popup-overlay tg-hidden" id="welcomePopupOverlay">
+    <div class="tg-popup-backdrop"></div>
+    <div class="tg-popup welcome-popup">
+        <button class="tg-popup-close" id="welcomeCloseBtn" title="Close"><i class="fa-solid fa-xmark"></i></button>
+        <div class="tg-popup-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <h2>Welcome to Trust-Score 👋</h2>
+        <p class="tg-popup-sub">Check Karo Phir Buy Karo — your AI shield against fake reviews.</p>
+        <div class="tg-feature-grid">
+            <div class="tg-feature-mini">
+                <i class="fa-solid fa-brain"></i>
+                <span>AI Fake Review Detection</span>
+            </div>
+            <div class="tg-feature-mini">
+                <i class="fa-solid fa-store"></i>
+                <span>Amazon, Flipkart &amp; Myntra</span>
+            </div>
+            <div class="tg-feature-mini">
+                <i class="fa-solid fa-bullseye"></i>
+                <span>98% Accuracy</span>
+            </div>
+            <div class="tg-feature-mini">
+                <i class="fa-solid fa-comment-dots"></i>
+                <span>Live Chat Support</span>
+            </div>
+        </div>
+        <button class="tg-popup-cta" id="welcomeGetStartedBtn">Get Started <i
+                class="fa-solid fa-arrow-right"></i></button>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- POPUP 2: CHATBOT SPOTLIGHT                                   -->
+<!-- ============================================================ -->
+<div class="tg-popup-overlay tg-hidden" id="spotlightPopupOverlay">
+    <div class="tg-popup-backdrop"></div>
+    <div class="tg-popup spotlight-popup">
+        <button class="tg-popup-close" id="spotlightCloseBtn" title="Close"><i class="fa-solid fa-xmark"></i></button>
+        <span class="tg-popup-tag">NEW</span>
+        <div class="tg-popup-icon spotlight-icon"><i class="fa-solid fa-robot"></i></div>
+        <h2>Need Help? Ask Our Assistant 🤖</h2>
+        <p class="tg-popup-sub">Our smart assistant can instantly answer questions about how Trust-Score works,
+            supported platforms, accuracy, privacy &amp; more.</p>
+        <div class="tg-popup-actions">
+            <button class="tg-popup-cta" id="spotlightChatBtn"><i class="fa-solid fa-comment-dots"></i> Chat
+                Now</button>
+            <button class="tg-popup-secondary" id="spotlightLaterBtn">Maybe Later</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- HELP & SUPPORT CHATBOT WIDGET                                -->
+<!-- ============================================================ -->
+<button class="tsc-launcher" id="tscLauncher" title="Chat with Trust-Score Assistant">
+    <i class="fa-solid fa-comment-dots"></i>
+    <span class="tsc-launcher-badge" id="tscLauncherBadge">1</span>
+</button>
+
+<div class="tsc-window tsc-hidden" id="tscWindow">
+    <div class="tsc-header">
+        <div class="tsc-header-left">
+            <div class="tsc-avatar"><i class="fa-solid fa-robot"></i></div>
+            <div>
+                <h4>Trust-Score Assistant</h4>
+                <span class="tsc-status"><span class="tsc-dot"></span> Online</span>
+            </div>
+        </div>
+        <button class="tsc-icon-btn" id="tscClose" title="Close"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="tsc-messages" id="tscMessages"></div>
+    <div class="tsc-quick-replies" id="tscQuickReplies"></div>
+    <form class="tsc-input-row" id="tscForm">
+        <input type="text" id="tscInput" placeholder="Ask me anything about Trust-Score..." autocomplete="off" />
+        <button type="submit" title="Send"><i class="fa-solid fa-paper-plane"></i></button>
+    </form>
+</div>
+
+<!-- Enhancement & chatbot scripts -->
+<script src="{{ url_for('static', filename='enhancements.js') }}"></script>
+<script src="{{ url_for('static', filename='chatbot.js') }}"></script>

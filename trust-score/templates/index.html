@@ -16,6 +16,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='enhancements.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='chatbot.css') }}">
 
     <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga_id }}"></script>
@@ -108,9 +110,69 @@
     <main class="page-shell">
 
         <!-- ============================================================ -->
+        <!-- ANIMATED WORKFLOW SHOWCASE (replaces the old static section) -->
+        <!-- ============================================================ -->
+        <section class="workflow-showcase" id="workflowShowcase">
+            <div class="workflow-head">
+                <span class="workflow-badge"><i class="fa-solid fa-bolt"></i> How Trust-Score Works</span>
+                <h2>From Product Link to Verified Trust Score — in Seconds</h2>
+                <p>Watch how our AI pipeline catches fake &amp; paid reviews before you hit "Buy"</p>
+            </div>
+
+            <div class="workflow-track">
+                <div class="workflow-line">
+                    <span class="workflow-traveler"></span>
+                </div>
+
+                <div class="workflow-step" style="--d:0">
+                    <div class="workflow-step-icon"><i class="fa-solid fa-link"></i></div>
+                    <span class="workflow-step-num">1</span>
+                    <h4>Paste Product Link</h4>
+                    <p>Drop any Amazon, Flipkart or Myntra product URL into the search box.</p>
+                </div>
+
+                <div class="workflow-step" style="--d:1">
+                    <div class="workflow-step-icon"><i class="fa-solid fa-spider"></i></div>
+                    <span class="workflow-step-num">2</span>
+                    <h4>Extension Scrapes Reviews</h4>
+                    <p>Our Chrome extension pulls every live review straight from the product page.</p>
+                </div>
+
+                <div class="workflow-step" style="--d:2">
+                    <div class="workflow-step-icon"><i class="fa-solid fa-tags"></i></div>
+                    <span class="workflow-step-num">3</span>
+                    <h4>Price Comparison</h4>
+                    <p>We fetch live prices across Amazon, Flipkart &amp; Myntra so you always buy at the best deal.</p>
+                </div>
+
+                <div class="workflow-step" style="--d:3">
+                    <div class="workflow-step-icon"><i class="fa-solid fa-layer-group"></i></div>
+                    <span class="workflow-step-num">4</span>
+                    <h4>Similar Products</h4>
+                    <p>Discover top-rated alternatives with higher trust scores and better value.</p>
+                </div>
+
+                <div class="workflow-step" style="--d:4">
+                    <div class="workflow-step-icon"><i class="fa-solid fa-brain"></i></div>
+                    <span class="workflow-step-num">5</span>
+                    <h4>AI Detects Fake Patterns</h4>
+                    <p>NLP &amp; ML models classify each review as genuine, paid or fake.</p>
+                </div>
+
+                <div class="workflow-step" style="--d:5">
+                    <div class="workflow-step-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                    <span class="workflow-step-num">6</span>
+                    <h4>Get Your Trust Score</h4>
+                    <p>See a clear trust score, charts &amp; per-review verdicts instantly.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
         <!-- LIVE SCRAPING PROGRESS OVERLAY (shown by website_bridge.js)  -->
         <!-- ============================================================ -->
-        <div id="homeLoadingOverlay" class="loading-overlay" style="display:none; justify-content: center; align-items: center;">
+        <div id="homeLoadingOverlay" class="loading-overlay"
+            style="display:none; justify-content: center; align-items: center;">
             <div class="loading-card glass-panel"
                 style="display: flex; flex-direction: column; align-items: center; justify-content: center;">
                 <div class="modern-spinner">
@@ -329,35 +391,6 @@
                     purchasing decisions.</p>
                 <p>This project uses <strong>Natural Language Processing (NLP)</strong> combined with behavioral
                     analysis to classify reviews as genuine or fake with high accuracy.</p>
-            </div>
-        </section>
-
-        <!-- How It Works -->
-        <section class="panel">
-            <div class="panel-head">
-                <h3><i class="fa-solid fa-wand-magic-sparkles brand-icon"></i> How It Works</h3>
-            </div>
-            <div class="how-it-works-grid">
-                <div class="how-step">
-                    <div class="how-step-number">1</div>
-                    <div class="how-step-icon"><i class="fa-solid fa-link"></i></div>
-                    <h4>Paste Product URL</h4>
-                    <p>Copy any product URL from Amazon, Flipkart, or Myntra.</p>
-                </div>
-                <div class="how-step-connector"><i class="fa-solid fa-arrow-right"></i></div>
-                <div class="how-step">
-                    <div class="how-step-number">2</div>
-                    <div class="how-step-icon"><i class="fa-solid fa-robot"></i></div>
-                    <h4>AI Analyzes Reviews</h4>
-                    <p>Our ML model scrapes and classifies each review.</p>
-                </div>
-                <div class="how-step-connector"><i class="fa-solid fa-arrow-right"></i></div>
-                <div class="how-step">
-                    <div class="how-step-number">3</div>
-                    <div class="how-step-icon"><i class="fa-solid fa-chart-pie"></i></div>
-                    <h4>Get Detailed Results</h4>
-                    <p>View trust scores, charts, and individual review verdicts.</p>
-                </div>
             </div>
         </section>
 
@@ -664,6 +697,7 @@
             backdrop.addEventListener("click", closeModal);
         })();
     </script>
+    {% include '_assistant_widgets.html' %}
 </body>
 
 </html>

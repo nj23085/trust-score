@@ -219,6 +219,37 @@
         </div>
     </div>
 
+    <!-- ============================================================ -->
+    <!-- LIVE BACKGROUND TASKS  (shows parallel execution status)     -->
+    <!-- Review analysis is already done; price comparison & similar -->
+    <!-- products keep running in the background via the extension. -->
+    <!-- ============================================================ -->
+    <div class="live-tasks-strip" id="liveTasksStrip">
+        <div class="live-task-chip is-done" id="taskReviewChip">
+            <span class="live-task-icon"><i class="fa-solid fa-circle-check"></i></span>
+            <div class="live-task-text">
+                <span class="live-task-label">Review Analysis</span>
+                <span class="live-task-sub">{{ total }} reviews analysed</span>
+            </div>
+        </div>
+        <div class="live-task-chip is-loading" id="taskPriceChip" onclick="switchTab('prices')" role="button"
+            tabindex="0" title="Jump to Price Comparison tab">
+            <span class="live-task-icon"><i class="fa-solid fa-spinner fa-spin"></i></span>
+            <div class="live-task-text">
+                <span class="live-task-label">Price Comparison</span>
+                <span class="live-task-sub" id="taskPriceSub">Running in background&hellip;</span>
+            </div>
+        </div>
+        <div class="live-task-chip is-loading" id="taskSimilarChip" onclick="switchTab('similar')" role="button"
+            tabindex="0" title="Jump to Similar Products tab">
+            <span class="live-task-icon"><i class="fa-solid fa-spinner fa-spin"></i></span>
+            <div class="live-task-text">
+                <span class="live-task-label">Similar Products</span>
+                <span class="live-task-sub" id="taskSimilarSub">Running in background&hellip;</span>
+            </div>
+        </div>
+    </div>
+
     <!-- Tab Navigation -->
     <nav class="dashboard-tabs" role="tablist">
         <button class="dashboard-tab active" onclick="switchTab('overview')" role="tab" aria-selected="true"
@@ -605,6 +636,23 @@
     let extensionReady = false;
     let priceCurrentSlide = 0;
 
+    // ── Live task-chip helper (Price Comparison / Similar Products) ────────
+    function setTaskState(chipId, subId, state, text) {
+        const chip = document.getElementById(chipId);
+        const sub = document.getElementById(subId);
+        if (!chip) return;
+        chip.classList.remove('is-loading', 'is-done', 'is-empty', 'is-warning');
+        chip.classList.add(state);
+        const iconEl = chip.querySelector('.live-task-icon i');
+        if (iconEl) {
+            iconEl.className = state === 'is-done' ? 'fa-solid fa-circle-check'
+                : state === 'is-empty' ? 'fa-solid fa-circle-minus'
+                : state === 'is-warning' ? 'fa-solid fa-triangle-exclamation'
+                : 'fa-solid fa-spinner fa-spin';
+        }
+        if (sub && text) sub.textContent = text;
+    }
+
     // ── FAST PATH: session already exists — start polling immediately ──────
     // The extension kicked off price comparison at the same time as review
     // scraping, so prices may already be partially or fully fetched.
@@ -634,6 +682,8 @@
             const ne = document.getElementById('priceNoExtension');
             if (ls) ls.classList.add('hidden');
             if (ne) ne.classList.remove('hidden');
+            setTaskState('taskPriceChip', 'taskPriceSub', 'is-warning', 'Needs Chrome extension');
+            setTaskState('taskSimilarChip', 'taskSimilarSub', 'is-warning', 'Needs Chrome extension');
         }
     }, 6000);
 
@@ -698,6 +748,8 @@
                     if (attempts > 120) {
                         clearInterval(pricePollTimer);
                         if (lm) lm.textContent = 'Timed out. Switch tabs and try again.';
+                        setTaskState('taskPriceChip', 'taskPriceSub', 'is-warning', 'Timed out');
+                        setTaskState('taskSimilarChip', 'taskSimilarSub', 'is-warning', 'Timed out');
                     }
                 }
             } catch (err) { /* keep polling */ }
@@ -707,6 +759,19 @@
     function renderPriceResults(results, productTitle, similarProducts) {
         const loadingEl = document.getElementById('priceLoadingState');
         if (loadingEl) loadingEl.classList.add('hidden');
+
+        const priceFoundCount = (results || []).filter(r => r.found && r.price > 0).length;
+        if (priceFoundCount > 0) {
+            setTaskState('taskPriceChip', 'taskPriceSub', 'is-done', `Found on ${priceFoundCount} store${priceFoundCount > 1 ? 's' : ''}`);
+        } else {
+            setTaskState('taskPriceChip', 'taskPriceSub', 'is-empty', 'No prices found');
+        }
+
+        if (similarProducts && similarProducts.length > 0) {
+            setTaskState('taskSimilarChip', 'taskSimilarSub', 'is-done', `${similarProducts.length} found`);
+        } else {
+            setTaskState('taskSimilarChip', 'taskSimilarSub', 'is-empty', 'None found');
+        }
 
         if (!results || results.length === 0) {
             if (loadingEl) {
