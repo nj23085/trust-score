@@ -16,7 +16,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='enhancements.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='enhancements.css', v='20260728-3') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='chatbot.css') }}">
 
     <!-- Google Analytics -->
@@ -29,7 +29,7 @@
     </script>
 </head>
 
-<body>
+<body class="{% if show_results %}results-active{% else %}home-active{% endif %}">
     {% include '_privacy_policy.html' %}
     {% include '_terms_conditions.html' %}
     <div class="bg-mesh"></div>
@@ -278,7 +278,10 @@
 
         <!-- Hero Section -->
         <section class="hero-card" id="hero">
+            <div class="hero-orb hero-orb-one"></div>
+            <div class="hero-orb hero-orb-two"></div>
             <div class="hero-content">
+                <div class="hero-eyebrow"><span class="hero-live-dot"></span> AI-powered review intelligence</div>
                 <h2>Trust-Score</h2>
                 <p class="hero-tagline">Check Karo Phir Buy Karo</p>
                 <p>An AI-driven system that detects fake and deceptive product reviews across major Indian e-commerce
@@ -300,6 +303,17 @@
                     </div>
                     <div class="url-platform-hint" id="platformHint"></div>
                 </form>
+                <button class="analysis-guide-trigger" id="analysisGuideTrigger" type="button">
+                    <span class="analysis-guide-trigger-icon"><i class="fa-solid fa-circle-play"></i></span>
+                    <span><strong>New here?</strong> See how to check a product in 20 seconds</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+                <div class="supported-platforms" aria-label="Supported platforms">
+                    <span>Works with</span>
+                    <span class="platform-pill platform-amazon"><i class="fa-brands fa-amazon"></i> Amazon</span>
+                    <span class="platform-pill platform-flipkart"><i class="fa-solid fa-bag-shopping"></i> Flipkart</span>
+                    <span class="platform-pill platform-myntra"><i class="fa-solid fa-shirt"></i> Myntra</span>
+                </div>
 
                 {% if not show_results %}
                 <div
@@ -324,8 +338,32 @@
                         </div>
                     </div>
                 </div>
+                <div class="trust-pulse" aria-label="Trust-Score service status">
+                    <span class="trust-pulse-ring"><i class="fa-solid fa-shield-heart"></i></span>
+                    <span><strong>Ready to analyze</strong><small>Paste a product URL to get started</small></span>
+                    <span class="trust-pulse-status"><i class="fa-solid fa-circle"></i> Systems online</span>
+                </div>
                 {% endif %}
             </div>
+            {% if not show_results %}
+            <aside class="home-score-preview" aria-label="Example Trust-Score preview">
+                <div class="preview-topline"><span><i class="fa-solid fa-sparkles"></i> TRUST PREVIEW</span><span class="preview-live"><i class="fa-solid fa-circle"></i> LIVE</span></div>
+                <div class="preview-product">
+                    <div class="preview-product-art"><i class="fa-solid fa-headphones"></i></div>
+                    <div><strong>Wireless Headphones</strong><small>Review intelligence snapshot</small></div>
+                </div>
+                <div class="preview-score-area">
+                    <div class="preview-score-ring"><div><strong>86</strong><small>/100</small></div></div>
+                    <div class="preview-score-copy"><span>Trust score</span><strong>High trust</strong><small>Most reviews look genuine</small></div>
+                </div>
+                <div class="preview-bars">
+                    <div><span>Review authenticity</span><b><i style="width:88%"></i></b><em>88%</em></div>
+                    <div><span>Reviewer quality</span><b><i style="width:79%"></i></b><em>79%</em></div>
+                    <div><span>Sentiment signal</span><b><i style="width:91%"></i></b><em>91%</em></div>
+                </div>
+                <div class="preview-footer"><i class="fa-solid fa-shield-heart"></i> Find the signal before you shop</div>
+            </aside>
+            {% endif %}
         </section>
 
         {% include '_results.html' %}
@@ -666,6 +704,28 @@
                     <span>We typically respond within 24 hours</span>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Quick-start guide: deliberately user-triggered so it is helpful without becoming another interruption. -->
+    <div class="tg-popup-overlay tg-hidden" id="analysisGuideOverlay" role="dialog" aria-modal="true"
+        aria-labelledby="analysisGuideTitle">
+        <div class="tg-popup-backdrop"></div>
+        <div class="tg-popup quick-guide-popup">
+            <button class="tg-popup-close" id="analysisGuideClose" type="button" aria-label="Close guide">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <span class="tg-popup-tag guide-tag">QUICK START</span>
+            <div class="tg-popup-icon guide-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+            <h2 id="analysisGuideTitle">Shop smarter in three steps</h2>
+            <p class="tg-popup-sub">Turn a product page into a clear review-quality signal before you buy.</p>
+            <ol class="guide-steps">
+                <li><span>1</span><div><strong>Copy a product link</strong><small>Amazon, Flipkart, or Myntra</small></div></li>
+                <li><span>2</span><div><strong>Paste it above</strong><small>We’ll identify the store automatically</small></div></li>
+                <li><span>3</span><div><strong>Read the trust score</strong><small>Spot fake-review risk at a glance</small></div></li>
+            </ol>
+            <button class="tg-popup-cta" id="analysisGuideStart" type="button">Try an analysis <i
+                    class="fa-solid fa-arrow-up-right-from-square"></i></button>
         </div>
     </div>
 

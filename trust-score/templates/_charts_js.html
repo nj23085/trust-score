@@ -137,8 +137,178 @@
         const genuine = parseInt(chartDataEl.dataset.genuine);
         const fakePercentage = parseFloat(chartDataEl.dataset.fakepercentage);
         const genuinePerc = parseFloat(chartDataEl.dataset.genuinepercentage);
+        const trustScore = parseFloat(chartDataEl.dataset.trust_score) || 0;
+        const totalReviews = parseInt(chartDataEl.dataset.total) || 0;
+        const productTitle = chartDataEl.dataset.product || 'Product';
         const keywordLabels = JSON.parse(chartDataEl.dataset.keywordlabels);
         const keywordValues = JSON.parse(chartDataEl.dataset.keywordvalues);
+
+        const scoreExplanationOverlay = document.getElementById('scoreExplanationOverlay');
+        const smartVerdictOverlay = document.getElementById('smartVerdictOverlay');
+        const openScoreExplanationBtn = document.getElementById('openScoreExplanationBtn');
+        const scoreExplanationClose = document.getElementById('scoreExplanationClose');
+        const smartVerdictClose = document.getElementById('smartVerdictClose');
+        const viewEvidenceBtn = document.getElementById('viewEvidenceBtn');
+        const comparePricesBtn = document.getElementById('comparePricesBtn');
+        const findAlternativesBtn = document.getElementById('findAlternativesBtn');
+        const scoreExplanationAuthenticity = document.getElementById('scoreExplanationAuthenticity');
+        const scoreExplanationRepetition = document.getElementById('scoreExplanationRepetition');
+        const scoreExplanationBurst = document.getElementById('scoreExplanationBurst');
+        const scoreExplanationVerified = document.getElementById('scoreExplanationVerified');
+        const scoreExplanationNote = document.getElementById('scoreExplanationNote');
+        const smartVerdictTitle = document.getElementById('smartVerdictTitle');
+        const smartVerdictCopy = document.getElementById('smartVerdictCopy');
+        const smartVerdictTag = document.getElementById('smartVerdictTag');
+        const smartVerdictIcon = document.getElementById('smartVerdictIcon');
+        const smartVerdictTrustPill = document.getElementById('smartVerdictTrustPill');
+        const smartVerdictRiskPill = document.getElementById('smartVerdictRiskPill');
+
+        function showOverlay(overlay) {
+            if (!overlay) return;
+            overlay.classList.remove('tg-hidden', 'tg-closing');
+        }
+
+        function hideOverlay(overlay, after) {
+            if (!overlay) return;
+            overlay.classList.add('tg-closing');
+            setTimeout(function () {
+                overlay.classList.add('tg-hidden');
+                overlay.classList.remove('tg-closing');
+                if (typeof after === 'function') after();
+            }, 300);
+        }
+
+        function populateScoreExplanation() {
+            const authenticity = Math.round((genuine / Math.max(totalReviews, 1)) * 100);
+            const repetition = fakePercentage <= 10 ? 'Low' : fakePercentage <= 30 ? 'Moderate' : fakePercentage <= 60 ? 'High' : 'Very high';
+            const burst = fakePercentage <= 10 ? 'None' : fakePercentage <= 30 ? 'Low' : fakePercentage <= 60 ? 'Moderate' : 'High';
+            const verified = trustScore >= 7.5 ? 'Strong' : trustScore >= 4.5 ? 'Moderate' : 'Weak';
+
+            if (scoreExplanationAuthenticity) scoreExplanationAuthenticity.textContent = authenticity + '%';
+            if (scoreExplanationRepetition) scoreExplanationRepetition.textContent = repetition;
+            if (scoreExplanationBurst) scoreExplanationBurst.textContent = burst;
+            if (scoreExplanationVerified) scoreExplanationVerified.textContent = verified;
+            if (scoreExplanationNote) {
+                scoreExplanationNote.textContent = `This analysis is based on ${totalReviews} reviews, with ${genuine} marked genuine and ${fake} flagged as suspicious.`;
+            }
+        }
+
+        function openScoreExplanation() {
+            populateScoreExplanation();
+            showOverlay(scoreExplanationOverlay);
+        }
+
+        function closeScoreExplanation() {
+            hideOverlay(scoreExplanationOverlay);
+        }
+
+        function getVerdictData() {
+            if (trustScore >= 7.5) {
+                return {
+                    key: 'safe',
+                    title: 'Safe to consider',
+                    copy: 'Most review signals are healthy. The product looks trustworthy, though it is still worth checking the evidence before you buy.',
+                    tagClass: 'safe-tag',
+                    iconClass: 'safe-icon',
+                    icon: 'fa-solid fa-circle-check'
+                };
+            }
+
+            if (trustScore >= 4.5) {
+                return {
+                    key: 'pause',
+                    title: 'Pause before buying',
+                    copy: 'The signal is mixed. Review the evidence, compare prices, and inspect alternatives before you decide.',
+                    tagClass: 'pause-tag',
+                    iconClass: 'pause-icon',
+                    icon: 'fa-solid fa-triangle-exclamation'
+                };
+            }
+
+            return {
+                key: 'high-risk',
+                title: 'High fake-review risk detected',
+                copy: 'The review pattern looks heavily manipulated. Compare options carefully and avoid relying on the headline rating alone.',
+                tagClass: 'high-risk-tag',
+                iconClass: 'high-risk-icon',
+                icon: 'fa-solid fa-circle-xmark'
+            };
+        }
+
+        function populateVerdictPopup() {
+            const verdict = getVerdictData();
+            if (smartVerdictTitle) smartVerdictTitle.textContent = verdict.title;
+            if (smartVerdictCopy) smartVerdictCopy.textContent = verdict.copy;
+            if (smartVerdictTag) {
+                smartVerdictTag.classList.remove('safe-tag', 'pause-tag', 'high-risk-tag');
+                smartVerdictTag.classList.add(verdict.tagClass);
+            }
+            if (smartVerdictIcon) {
+                smartVerdictIcon.classList.remove('safe-icon', 'pause-icon', 'high-risk-icon');
+                smartVerdictIcon.classList.add(verdict.iconClass);
+                smartVerdictIcon.innerHTML = `<i class="${verdict.icon}"></i>`;
+            }
+            if (smartVerdictTrustPill) smartVerdictTrustPill.textContent = `Trust score: ${trustScore.toFixed(1)}/10`;
+            if (smartVerdictRiskPill) smartVerdictRiskPill.textContent = `Fake reviews: ${Math.round(fakePercentage)}%`;
+            return verdict;
+        }
+
+        function maybeShowVerdictPopup() {
+            if (!smartVerdictOverlay || totalReviews < 5) return;
+            const verdict = populateVerdictPopup();
+            const productSlug = String(productTitle || 'product').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+            const verdictKey = `trust_score_verdict_seen_${verdict.key}_${productSlug}`;
+
+            try {
+                if (localStorage.getItem(verdictKey) === 'true') return;
+                localStorage.setItem(verdictKey, 'true');
+            } catch (e) {
+                // localStorage may be unavailable in private browsing modes.
+            }
+
+            setTimeout(function () {
+                showOverlay(smartVerdictOverlay);
+            }, 650);
+        }
+
+        openScoreExplanationBtn && openScoreExplanationBtn.addEventListener('click', openScoreExplanation);
+        scoreExplanationClose && scoreExplanationClose.addEventListener('click', closeScoreExplanation);
+        scoreExplanationOverlay && scoreExplanationOverlay.querySelector('.tg-popup-backdrop') &&
+            scoreExplanationOverlay.querySelector('.tg-popup-backdrop').addEventListener('click', closeScoreExplanation);
+
+        smartVerdictClose && smartVerdictClose.addEventListener('click', function () {
+            hideOverlay(smartVerdictOverlay);
+        });
+        smartVerdictOverlay && smartVerdictOverlay.querySelector('.tg-popup-backdrop') &&
+            smartVerdictOverlay.querySelector('.tg-popup-backdrop').addEventListener('click', function () {
+                hideOverlay(smartVerdictOverlay);
+            });
+
+        viewEvidenceBtn && viewEvidenceBtn.addEventListener('click', function () {
+            hideOverlay(smartVerdictOverlay, function () {
+                switchTab('analysis');
+                openScoreExplanation();
+            });
+        });
+        comparePricesBtn && comparePricesBtn.addEventListener('click', function () {
+            hideOverlay(smartVerdictOverlay, function () {
+                switchTab('prices');
+            });
+        });
+        findAlternativesBtn && findAlternativesBtn.addEventListener('click', function () {
+            hideOverlay(smartVerdictOverlay, function () {
+                switchTab('similar');
+            });
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key !== 'Escape') return;
+            if (scoreExplanationOverlay && !scoreExplanationOverlay.classList.contains('tg-hidden')) {
+                closeScoreExplanation();
+            } else if (smartVerdictOverlay && !smartVerdictOverlay.classList.contains('tg-hidden')) {
+                hideOverlay(smartVerdictOverlay);
+            }
+        });
 
         window.myCharts = [];
 
@@ -226,6 +396,8 @@
         }
 
         makeDoughnut("doughnutChart");
+
+        maybeShowVerdictPopup();
 
         // ---- Bar chart ----
         const barEl = document.getElementById("barChart");

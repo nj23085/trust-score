@@ -11,6 +11,7 @@
 
     var welcomeOverlay = document.getElementById("welcomePopupOverlay");
     var spotlightOverlay = document.getElementById("spotlightPopupOverlay");
+    var guideOverlay = document.getElementById("analysisGuideOverlay");
 
     function show(overlay) {
         if (!overlay) return;
@@ -80,6 +81,36 @@
         spotlightOverlay.querySelector(".tg-popup-backdrop") &&
             spotlightOverlay.querySelector(".tg-popup-backdrop").addEventListener("click", closeSpotlight);
     }
+
+    // ---- Popup #3: user-requested quick-start guide ----
+    if (guideOverlay) {
+        var guideTrigger = document.getElementById("analysisGuideTrigger");
+        var guideClose = document.getElementById("analysisGuideClose");
+        var guideStart = document.getElementById("analysisGuideStart");
+
+        function closeGuide() { hide(guideOverlay); }
+
+        guideTrigger && guideTrigger.addEventListener("click", function () { show(guideOverlay); });
+        guideClose && guideClose.addEventListener("click", closeGuide);
+        guideOverlay.querySelector(".tg-popup-backdrop") &&
+            guideOverlay.querySelector(".tg-popup-backdrop").addEventListener("click", closeGuide);
+        guideStart && guideStart.addEventListener("click", function () {
+            hide(guideOverlay, function () {
+                var input = document.getElementById("urlInput");
+                if (input) {
+                    input.scrollIntoView({ behavior: "smooth", block: "center" });
+                    setTimeout(function () { input.focus(); }, 350);
+                }
+            });
+        });
+    }
+
+    document.addEventListener("keydown", function (event) {
+        if (event.key !== "Escape") return;
+        if (guideOverlay && !guideOverlay.classList.contains("tg-hidden")) hide(guideOverlay);
+        else if (spotlightOverlay && !spotlightOverlay.classList.contains("tg-hidden")) hide(spotlightOverlay);
+        else if (welcomeOverlay && !welcomeOverlay.classList.contains("tg-hidden")) hide(welcomeOverlay);
+    });
 
     // ---- Workflow showcase: re-play the step animation whenever it scrolls into view ----
     var workflowSection = document.getElementById("workflowShowcase");

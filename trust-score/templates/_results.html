@@ -191,6 +191,8 @@
 <!-- ============================================================ -->
 <section class="panel slide-up delay-2 dashboard-container">
 
+    <div class="command-center-kicker"><span></span> TRUST-SCORE COMMAND CENTER <small>LIVE ANALYSIS</small></div>
+
     <!-- Logo Watermark -->
     <img src="{{ url_for('static', filename='project-logo.svg') }}" alt="" class="logo-watermark" aria-hidden="true">
 
@@ -350,9 +352,80 @@
                             </div>
                         </div>
                     </div>
+                    <div class="trust-score-actions">
+                        <button type="button" class="score-insight-btn" id="openScoreExplanationBtn">
+                            <i class="fa-solid fa-circle-info"></i>
+                            Why this score?
+                        </button>
+                    </div>
                 </div>
             </div>
         </article>
+
+        <div class="tg-popup-overlay tg-hidden" id="scoreExplanationOverlay" role="dialog" aria-modal="true"
+            aria-labelledby="scoreExplanationTitle">
+            <div class="tg-popup-backdrop"></div>
+            <div class="tg-popup score-explanation-popup">
+                <button class="tg-popup-close" id="scoreExplanationClose" type="button" aria-label="Close score explanation">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <span class="tg-popup-tag explain-tag">WHY THIS SCORE</span>
+                <div class="tg-popup-icon explain-icon"><i class="fa-solid fa-magnifying-glass-chart"></i></div>
+                <h2 id="scoreExplanationTitle">Why this score?</h2>
+                <p class="tg-popup-sub">A quick breakdown of the signals that shaped this trust score.</p>
+                <div class="score-explanation-grid">
+                    <div class="score-explanation-item">
+                        <span>Review authenticity</span>
+                        <strong id="scoreExplanationAuthenticity">--%</strong>
+                    </div>
+                    <div class="score-explanation-item">
+                        <span>Repetitive wording detected</span>
+                        <strong id="scoreExplanationRepetition">--</strong>
+                    </div>
+                    <div class="score-explanation-item">
+                        <span>Suspicious review burst</span>
+                        <strong id="scoreExplanationBurst">--</strong>
+                    </div>
+                    <div class="score-explanation-item">
+                        <span>Verified-purchase signals</span>
+                        <strong id="scoreExplanationVerified">--</strong>
+                    </div>
+                </div>
+                <p class="score-explanation-note" id="scoreExplanationNote">We combine review volume, language patterns, and model confidence to estimate trust.</p>
+            </div>
+        </div>
+
+        <div class="tg-popup-overlay tg-hidden" id="smartVerdictOverlay" role="dialog" aria-modal="true"
+            aria-labelledby="smartVerdictTitle">
+            <div class="tg-popup-backdrop"></div>
+            <div class="tg-popup verdict-popup">
+                <button class="tg-popup-close" id="smartVerdictClose" type="button" aria-label="Close verdict popup">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <span class="tg-popup-tag verdict-tag" id="smartVerdictTag">SMART VERDICT</span>
+                <div class="tg-popup-icon verdict-icon" id="smartVerdictIcon"><i class="fa-solid fa-shield-halved"></i></div>
+                <h2 id="smartVerdictTitle">Safe to consider</h2>
+                <p class="tg-popup-sub" id="smartVerdictCopy">The review signals look healthy. You can keep browsing with a good level of confidence.</p>
+                <div class="verdict-pill-row">
+                    <span class="verdict-pill" id="smartVerdictTrustPill">Trust score: --/10</span>
+                    <span class="verdict-pill" id="smartVerdictRiskPill">Fake reviews: --%</span>
+                </div>
+                <div class="tg-popup-actions">
+                    <button class="tg-popup-cta" id="viewEvidenceBtn" type="button">
+                        <i class="fa-solid fa-list-check"></i>
+                        View evidence
+                    </button>
+                    <button class="tg-popup-secondary" id="comparePricesBtn" type="button">
+                        <i class="fa-solid fa-tags"></i>
+                        Compare prices
+                    </button>
+                    <button class="tg-popup-secondary" id="findAlternativesBtn" type="button">
+                        <i class="fa-solid fa-layer-group"></i>
+                        Find alternatives
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <!-- Metrics Grid -->
         <div class="metrics-grid" style="margin-bottom:24px;">
